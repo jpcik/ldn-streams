@@ -52,7 +52,7 @@ object LdnServer extends LdnTarget with LdnReceiver{
     val route = receiverRoute
       
 
-    val bindingFuture = Http().bindAndHandle(route, "http://ldnstreams.herokuapp.com/", 80)
+    val bindingFuture = Http().bindAndHandle(route, "http://ldnstreams.herokuapp.com", 80)
 
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
