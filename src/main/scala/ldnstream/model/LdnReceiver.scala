@@ -29,13 +29,23 @@ trait LdnReceiver extends LdnNode{
          }
       } ~ 
       (get) {
-       complete{
+        complete{
            val sw=new StringWriter
            RDFDataMgr.write(sw, model, Lang.JSONLD)
           HttpResponse(StatusCodes.OK,entity=HttpEntity(`application/ld+json`,sw.toString))
-       }
-     }
-  }
+        }
+      }
+    } ~
+    path("inbox" / Remaining) {id=>
+      (get & extractUri) {uri=>
+        complete{
+          val notif=getNotification(uri)
+          if (notif.isDefined) HttpResponse(StatusCodes.OK,
+              entity=HttpEntity(`application/ld+json`,notif.get.payload.getString))
+          else   HttpResponse(StatusCodes.NotFound)
+        }
+      }
+    }
   }
   lazy val handler=new NotificationHandler(base+"inbox/")
   
