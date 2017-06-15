@@ -52,13 +52,21 @@ object LdnServer extends LdnTarget with LdnReceiver{
     val route = receiverRoute
       
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 80)
+    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
+    while (true) {
+      Thread.sleep(10000)
+    }
+    
     bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ => system.terminate()) // and shutdown when done
+      .flatMap{o=>
+        println("unbinding")
+        o.unbind()} // trigger unbinding from the port
+      .onComplete{p =>
+        println("terminating server")
+        system.terminate()} // and shutdown when done
   }
 }
 
