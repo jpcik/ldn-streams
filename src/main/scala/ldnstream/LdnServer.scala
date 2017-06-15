@@ -56,7 +56,7 @@ object LdnServer extends LdnTarget with LdnReceiver{
 
     println(s"Server online at http://localhost:${p}/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
-    StdIn.readBoolean()
+    StdIn.readLine()
     bindingFuture
       .flatMap{o=>
         println("unbinding")
