@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.MediaType
 trait LdnNode extends LdnTypes{
   def host:String
   def port:Int
-  def base=s"http://${host}:${port}/"
+  def base=s"http://${host}/"
   
   def getLinks(res:HttpResponse)=
     res.headers.filter(_.is("link")).map(_.asInstanceOf[Link])

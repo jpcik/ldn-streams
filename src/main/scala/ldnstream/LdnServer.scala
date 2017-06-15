@@ -36,7 +36,7 @@ import ldnstream.model.LdnReceiver
 
 
 object LdnServer extends LdnTarget with LdnReceiver{
-  val host:String="localhost"
+  val host:String="ldnstreams.herokuapp.com"
    val port:Int=8080
 
   def main(args: Array[String]) {
@@ -50,16 +50,14 @@ object LdnServer extends LdnTarget with LdnReceiver{
  
      
     val route = receiverRoute
-      
-
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
-
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    val p=sys.env("PORT")
+    println(s"detected port: $p")
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", p.toInt)
+    println(s"Server online at http://localhost:${p}/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
-    while (true) {
+    while (true){
       Thread.sleep(10000)
     }
-    
     bindingFuture
       .flatMap{o=>
         println("unbinding")
