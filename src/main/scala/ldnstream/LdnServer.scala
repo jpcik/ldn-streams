@@ -52,7 +52,7 @@ object LdnServer extends LdnTarget with LdnReceiver{
     val route = receiverRoute
     val p=sys.env("PORT")
     println(s"detected port: $p")
-    val bindingFuture = Http().bindAndHandle(route, "localhost", p.toInt)
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", p.toInt)
 
     println(s"Server online at http://localhost:${p}/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
