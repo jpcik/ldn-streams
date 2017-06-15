@@ -9,7 +9,7 @@ import ldnstream.model.LdnReceiver
 
 object LdnServer extends LdnTarget with LdnReceiver{
   lazy val host:String=boot._1
-  lazy val port=if (host=="localhost") boot._2 else 0
+  lazy val port=boot._2
 
   def boot={
     val p=sys.env.get("PORT")

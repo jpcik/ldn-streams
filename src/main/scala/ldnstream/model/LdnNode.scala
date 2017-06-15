@@ -11,7 +11,7 @@ trait LdnNode extends LdnTypes{
   def host:String
   def port:Int
   def base=
-    if (port==0) s"http://${host}/"
+    if (host!="localhost") s"http://${host}/"
     else s"http://${host}:${port}/"  
   def getLinks(res:HttpResponse)=
     res.headers.filter(_.is("link")).map(_.asInstanceOf[Link])
