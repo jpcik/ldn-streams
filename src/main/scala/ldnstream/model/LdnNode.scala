@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.MediaType.WithFixedCharset
 import akka.http.scaladsl.model.MediaType
+import collection.JavaConversions._
 
 trait LdnNode extends LdnTypes{
   def host:String
@@ -16,6 +17,8 @@ trait LdnNode extends LdnTypes{
 
   def accepts(accept:Accept,mediaType:MediaType)={
     val types=Seq(MediaRange(mediaType))
+  
+    //println(accept.mediaRanges.head.getParams().mkString)
     !accept.mediaRanges.intersect(types).isEmpty
   }
   
@@ -26,15 +29,11 @@ trait LdnNode extends LdnTypes{
     case x  => None
   }
   
-  def contentIs(mType:MediaType):HttpHeader => Option[String]={
-  case ct:  headers.`Content-Type`=> 
-    println("pipo")
-    Some("")
-      //if (ct.contentType==mType) Some("") else None
-    case x =>
-      println("tupo "+x)
-      
-      None  
+  def matchWithoutParams(cType:ContentType,mType:MediaType)={
+    val m=cType.mediaType
+      println("type "+m.mainType+" "+m.subType)
+      println("params: "+m.params.keys.mkString)  
+    m.mainType==mType.mainType && m.subType==mType.subType
   }
   
 }

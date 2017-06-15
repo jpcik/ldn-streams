@@ -19,12 +19,11 @@ trait LdnReceiver extends LdnNode{
     path("inbox") {
       (post & extractRequestEntity & extractUri & entity(as[String])) { (req,uri,pay) =>
          complete{ 
-           println(req.contentType)
-           if (req.contentType.mediaType==`application/ld+json`){
+           if (matchWithoutParams(req.contentType,`application/ld+json`)){
+             println("over here")
              createNotification(pay, req.contentType.mediaType) map {iri=>
                HttpResponse(StatusCodes.Created,List(headers.Location(iri)))
              }
-             
            }
            else HttpResponse(StatusCodes.UnsupportedMediaType)
          }
@@ -45,11 +44,13 @@ trait LdnReceiver extends LdnNode{
   
   
   def createNotification(payload:String,mType:MediaType)={
-    val bodyOp=mType match {
+    val bodyOp=Some(JsonLdPayload(payload))
+   /*   
+      mType match {
       case `application/ld+json` => Some(JsonLdPayload(payload))
       case `text/turtle` => Some(TurtlePayload(payload))
       case _ => None
-    }
+    }*/
     bodyOp.map {body=>
     val id=handler.create(body)
     model.add(inboxRes,ResourceFactory.createProperty(LdnVocab.contains),ResourceFactory.createResource(id))
