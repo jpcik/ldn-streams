@@ -42,6 +42,7 @@ trait LdnNode extends LdnTypes{
 object LdnVocab {
   val inbox="http://www.w3.org/ns/ldp#inbox"
   val contains="http://www.w3.org/ns/ldp#contains"
+  val Container="http://www.w3.org/ns/ldp#Container"
 }
 
 trait LdnTypes {

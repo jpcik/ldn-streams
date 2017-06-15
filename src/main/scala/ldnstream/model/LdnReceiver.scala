@@ -12,9 +12,11 @@ import ldnstream.core.JsonLdPayload
 import ldnstream.core.TurtlePayload
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
+import org.apache.jena.vocabulary.RDF
 
 trait LdnReceiver extends LdnNode{
   import MediaTypes._
+  import HttpMethods._
   val receiverRoute = { 
     path("inbox") {
       (post & extractRequestEntity & extractUri & entity(as[String])) { (req,uri,pay) =>
@@ -34,6 +36,12 @@ trait LdnReceiver extends LdnNode{
            RDFDataMgr.write(sw, model, Lang.JSONLD)
           HttpResponse(StatusCodes.OK,entity=HttpEntity(`application/ld+json`,sw.toString))
         }
+      } ~
+      (options) {
+        complete {
+          
+          HttpResponse(StatusCodes.OK,List(headers.Allow(GET,OPTIONS,POST),RawHeader("Accept-Post",`application/ld+json`.toString)))
+        }
       }
     } ~
     path("inbox" / Remaining) {id=>
@@ -51,7 +59,7 @@ trait LdnReceiver extends LdnNode{
   
   val model=ModelFactory.createDefaultModel
   lazy val inboxRes=ResourceFactory.createResource(base+"inbox")
-  
+  model.add(inboxRes,RDF.`type`,ResourceFactory.createResource(LdnVocab.Container))
   
   def createNotification(payload:String,mType:MediaType)={
     val bodyOp=Some(JsonLdPayload(payload))
