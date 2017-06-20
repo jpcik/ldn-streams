@@ -20,3 +20,7 @@ trait Sender extends LdnEntity{
   def discover(targetUrl:String):Future[Option[Receiver]]
   def send(receiver:Receiver,payload:Any):Unit
 }
+
+trait Consumer extends LdnEntity{
+  
+}

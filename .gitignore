@@ -15,8 +15,12 @@ project/plugins/project/
 cache/
 datasets/
 
+.cache-main
+.cache-tests
+
 # Scala-IDE specific
 .scala_dependencies
 .worksheet
 .classpath
-.projectx
+.project
+.settings/

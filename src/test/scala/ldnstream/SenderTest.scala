@@ -3,6 +3,10 @@ package ldnstream
 import ldnstream.model.LdnSender
 
 object SenderTest {
+  
+  
+  // implementation report: https://linkedresearch.org/ldn/tests/reports/ed5d3ce0-55bd-11e7-a741-cb560322e93d
+  
   val base="https://linkedresearch.org/ldn/tests"
   val id="69b347f0-4c93-11e7-a741-cb560322e93d"
   val testUrlLink=s"$base/target/${id}?discovery=link-header"
@@ -20,10 +24,9 @@ object SenderTest {
 }
     """
   def main(args:Array[String]):Unit={
-    val p= new LdnSender{} 
-    p.discoverAndSend(testUrlLink,payload)
-    p.discoverAndSend(testUrlRdf, payload)
-    //LdnSender.send(testUrlInbox, payload)
+    LdnClient.discoverAndSend(testUrlLink,payload)
+    //LdnClient.discoverAndSend(testUrlRdf, payload)
+    
   }
   
 }
