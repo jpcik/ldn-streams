@@ -1,37 +1,43 @@
 package ldnstream.streams
 
+import scala.concurrent.Future
+
 import akka.actor.Actor
 import akka.stream.ActorMaterializer
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.ContentType
-import ldnstream.core.NewStream
-import akka.http.scaladsl.model.MediaRange
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.StatusCodes
 
 trait ActorStreamReceiver extends Actor with StreamReceiver{
   implicit val system=this.context.system
   implicit val materializer:ActorMaterializer= ActorMaterializer()
-  
+
+  def answer(f:Future[ResponseMsg])={
+    val s=sender
+    f .map{a=> s ! a}        
+  }
+
+  def answer(f:ResponseMsg)={
+    val s=sender
+    s ! f        
+  }
+
   def receive = {
     case all:RetrieveAllStreams=>
-      getAllStreams(all.range).map{tup=>
-        sender ! tup
-      }
+      answer (getAllStreams(all.range))
+
     case str:CreateStream=>
-      postInputStream(str.msg.body,str.msg.ct).map{resp=>
-        sender ! resp
-      }
+      answer (postInputStream(str.msg.body,str.msg.ct))
+      
     case str:RetrieveStream=>
-      getStream(str.uri, str.range).map{r=>
-        sender ! r
-      }
+      answer (getStream(str.uri, str.range))
+      
     case msg:SendStreamItem=>
-      val r=postStreamItem(msg.uri, msg.msg.body, msg.msg.ct)
-      sender ! r
+      answer (postStreamItem(msg.uri, msg.msg.body, msg.msg.ct))
+
+    case r:RetrieveStreamItem=>
+      retrieveStreamItem(r.uri, None, r.range)
+      
     case q:CreateQuery=>
-      val r=postQuery(q.msg.body, q.msg.ct)
-      sender ! r
+      answer (postQuery(q.msg.body, q.msg.ct))
+
     case p:PushStreamItems=>
       pushStreamItems(p.uri)
   }

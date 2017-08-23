@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.MediaType.WithFixedCharset
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.HttpMethods._
 
-import collection.JavaConversions._
+import collection.JavaConverters._
 import org.apache.jena.riot.Lang
 import akka.http.scaladsl.Http
 import akka.actor.ActorSystem
@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import org.apache.jena.rdf.model.Property
-import ldnstreams.vocab.LDP
+import ldnstream.vocab.LDP
 import rdftools.rdf.api.JenaTools
 import ldnstream.Receiver
 import rdftools.rdf.Iri
@@ -97,7 +97,7 @@ trait LdnNode extends LdnEntity{
       val sr=new StringReader(pay)
       RDFDataMgr.read(m, sr, "",lang)
       val inboxProp=JenaTools.toJenaProperty(LDP.inbox)
-      val inboxNode= m.listStatements(null, inboxProp, null).toSeq.headOption
+      val inboxNode= m.listStatements(null, inboxProp, null).asScala.toSeq.headOption
       inboxNode.map(stm=>Receiver(Uri(stm.getObject.asResource.getURI)))
     }}
   }

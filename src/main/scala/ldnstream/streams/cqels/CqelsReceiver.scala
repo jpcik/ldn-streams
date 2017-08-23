@@ -1,6 +1,6 @@
 package ldnstream.streams.cqels
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.Queue
 import scala.io.StdIn
 import scala.language.implicitConversions
@@ -39,7 +39,8 @@ object CqelsReceiver extends LdnStreamReceiver{
     val slct=cqelsCtx.registerSelect(queryStr)
     slct.register(new ContinuousListener{
       def update(map:Mapping)={
-        val newMap=map.vars.map{v=>
+        
+        val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
         queue offer newMap
@@ -52,7 +53,7 @@ object CqelsReceiver extends LdnStreamReceiver{
     val con=new ContinuousListener{
       def update(map:Mapping)={
         println("I am alive")
-        val newMap=map.vars.map{v=>
+        val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
         qu.enqueue(newMap)

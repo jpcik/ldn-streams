@@ -2,7 +2,7 @@ package ldnstream.streams
 
 import java.io._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.Queue
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -20,8 +20,8 @@ import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.util.Timeout
 import ldnstream.core._
 import ldnstream.model._
-import ldnstreams.vocab.LDP
-import ldnstreams.vocab.RSPS
+import ldnstream.vocab.LDP
+import ldnstream.vocab.RSPS
 import rdftools.rdf._
 import rdftools.rdf.RdfSchema._
 import rdftools.rdf.api.JenaGraphs
@@ -77,6 +77,7 @@ trait StreamReceiver extends LdnEntity{
   private def allStreams(lang:Lang)={
     implicit val m=ModelFactory.createDefaultModel
     val streamsFut=(streamsHandler ? FetchAllStreams).mapTo[Seq[RdfStream]]
+    println("now all")
     streamsFut.map{streams=>
       streams foreach { str=> m.add(asRdf(str)) }
       writeRdf(m)(lang)   
@@ -110,6 +111,7 @@ trait StreamReceiver extends LdnEntity{
   def getAllStreams(range:MediaRange):Future[ResponseMsg] = 
     matching(range) match {
       case Some(mt)=>allStreams(toRdfLang(mt)).map{pay=>
+        println("body "+pay)
         ok(pay,mt)
       }
       case None => Future(mediaTypeNotSupported(range))           
@@ -118,8 +120,8 @@ trait StreamReceiver extends LdnEntity{
   private def parseStreamName(json:String)(implicit lang:Lang)={
     val m=loadRdf(json)
     val stat=m.listStatements(serverIri.toString:Iri, LDP.contains, null)
-    val streamIri=stat.toSeq.head.getObject
-    val stm=m.listStatements(streamIri.asResource, RDFS.label, null).toSeq.head
+    val streamIri=stat.asScala.toSeq.head.getObject
+    val stm=m.listStatements(streamIri.asResource, RDFS.label, null).asScala.toSeq.head
     val name=stm.getObject.asLiteral().getString
     name
   }
@@ -160,9 +162,9 @@ trait StreamReceiver extends LdnEntity{
  
   private def parseQuery(json:String)(implicit lang:Lang)={
     val m=loadRdf(json)
-    val stm=m.listStatements(null, RSPS.query, null).toSeq.head
+    val stm=m.listStatements(null, RSPS.query, null).asScala.toSeq.head
     val query=stm.getObject.asLiteral().getString
-    val stm2=m.listStatements(stm.getSubject,RDFS.label,null).toSeq.head
+    val stm2=m.listStatements(stm.getSubject,RDFS.label,null).asScala.toSeq.head
     val name=stm2.getObject.asLiteral.getString
     (name,query)
   }
@@ -192,7 +194,9 @@ trait StreamReceiver extends LdnEntity{
       case None=>Future(mediaTypeNotSupported(range))
       case Some(mt) =>
         implicit val lang=toRdfLang(mt)
-        val streamUri=uri.toString.replace("/inbox","")
+        
+        println("get this item " +uri)
+        val streamUri=uri.toString.replace("/output","")
         val strr=(streamsHandler ? FetchStream(streamUri)).mapTo[Option[RdfStream]].flatMap {ss=>
           val pip=(ss.get.outputRef.get ? Last(size.getOrElse("10").toInt)).mapTo[Iterator[Triple]]
           pip.map(a=>ok(writeRdf(a)))
@@ -205,6 +209,7 @@ trait StreamReceiver extends LdnEntity{
     matching(ct) match {
       case None => mediaTypeNotSupported(ct)
       case Some(mt) => 
+        println("feed this rdf: "+pay)
         val m=loadRdf(pay)(toRdfLang(ct))
         consumeGraph(uri,m.getGraph)
         ok("done")

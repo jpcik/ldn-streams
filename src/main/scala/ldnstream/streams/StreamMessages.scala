@@ -45,7 +45,7 @@ object EmptyMsg extends StreamMsg{
   val body=null
 }
 
-case class RetrieveAllStreams(implicit range:MediaRange) 
+case class RetrieveAllStreams()(implicit val range:MediaRange) 
   extends RequestMsg {
   val msg=EmptyMsg
 }
@@ -56,9 +56,9 @@ case class RetrieveStream(uri:Uri)(implicit val range:MediaRange)
 case class CreateStream(msg:StreamMsg)(implicit val range:MediaRange) 
   extends RequestMsg{
 }
-case class CreateQuery(b:String)(implicit val range:MediaRange)
+case class CreateQuery(msg:StreamMsg)(implicit val range:MediaRange)
   extends RequestMsg{
-  val msg=Msg(b)
+  //val msg=Msg(b)
 }
 case class RetrieveStreamItem(uri:Uri)(implicit val range:MediaRange)
   extends RequestMsg{

@@ -7,18 +7,21 @@ import scala.collection.mutable.Queue
 import akka.http.scaladsl.model.Uri
 import rdftools.rdf.Graph
 import akka.stream.scaladsl.SourceQueueWithComplete
-import collection.JavaConversions._
+import collection.JavaConverters._
 import rdftools.rdf.api.JenaTools._
 
-class CqelsActorReceiver extends ActorStreamReceiver{
+class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
   val cqelsCtx=new ExecContext("./",false)
   val cqels=new CQELSEngine(cqelsCtx)
   val selects=new collection.mutable.HashMap[String,ContinuousSelect]
 
-  val serverIri=Uri("http://hevs.ch/")
+  val serverIri=Uri(iri)
     
   override def consumeGraph(uri:Uri,g:Graph)={
-    g.triples.foreach { t => cqels send (uri.toString,t) }
+    g.triples.foreach { t =>
+      println("feed cqels "+uri)
+      cqels send (uri.toString,t) 
+    }
   }
   
   //"SELECT ?s ?p ?o WHERE {STREAM <e.com/stream> [RANGE 2s] {?s ?p ?o}}"
@@ -28,7 +31,9 @@ class CqelsActorReceiver extends ActorStreamReceiver{
     val slct=cqelsCtx.registerSelect(queryStr)
     slct.register(new ContinuousListener{
       def update(map:Mapping)={
-        val newMap=map.vars.map{v=>
+                println("new data")
+
+        val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
         queue offer newMap
@@ -41,7 +46,7 @@ class CqelsActorReceiver extends ActorStreamReceiver{
     val con=new ContinuousListener{
       def update(map:Mapping)={
         println("I am alive")
-        val newMap=map.vars.map{v=>
+        val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
         qu.enqueue(newMap)

@@ -25,8 +25,8 @@ class OutputStreamActor(maxSize:Int) extends Actor {
       println("asking last")
       
       val ddd=(queue.takeRight(n)).toIterator
-      //.mkString(","))
-      
+      .mkString(",")
+      println("tobias "+ddd)
        sender ! ddd
        
    case t:Triple=>

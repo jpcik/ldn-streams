@@ -3,19 +3,60 @@ package ldnstream.cqels
 import ldnstream.streams.LdnStreamClient
 import ldnstream.streams.StreamTarget
 import akka.http.scaladsl.model.ContentType
-import akka.actor.ActorSystem
+import akka.actor._
 import akka.stream.ActorMaterializer
 import ldnstream.model.LdnTypes._
+import ldnstream.streams.StreamClient
+import ldnstream.streams.cqels.CqelsActorReceiver
+import akka.http.scaladsl.model.MediaRange
+import concurrent.duration._
+import language.postfixOps
 
 object CqelsClientTest {
 
-  def main(args:Array[String])={
+  def testClient={
+    val sys=ActorSystem("testSys")
+    implicit val ctx=sys.dispatcher
+    
+    val client= new StreamClient{
+      implicit val system=sys
+      val materializer=ActorMaterializer() 
+    }
+    
+    implicit val serverIri="http://hevs.ch/streams"
+    implicit val ct:ContentType.NonBinary=`application/ld+json`
+    implicit val range=MediaRange.apply(`application/ld+json`)
+    val cqels=sys.actorOf(Props(new CqelsActorReceiver(serverIri)), "cqels")
+    
+    
+    client.postStream(cqels, "s1")
+    
+    
+    client.postQuery(cqels,"q1", s"SELECT ?s ?p ?o WHERE {STREAM <$serverIri/s1> [RANGE 2s] {?s ?p ?o}}",ct)
+    
+    val ev="""{  "@context": "http://schema.org/",  "@type": "Event", "name": "Nice concert"} """
+    sys.scheduler.schedule(0 seconds, 5 seconds){
+      client.postStreamItem(cqels, s"$serverIri/s1", ev, ct)
+    }
+        client.getStreams(cqels)
+
+    
+    Thread.sleep(10000)
+    
+    client.getStreamItem(cqels, s"$serverIri/q1/output")
+    
+  }
+  
+  
+  def main(args:Array[String]):Unit={
+    testClient
+    /*
     val client=new LdnStreamClient("cqelsClient")
     
     implicit val target=StreamTarget("http://localhost:8080/streams")
     implicit val cType=`application/ld+json`
     client.createReadStream("s1")
     client.getStreams()
-    
+    */
   }
 }

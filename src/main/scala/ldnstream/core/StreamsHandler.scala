@@ -13,11 +13,11 @@ import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 import concurrent.duration._
 import scala.language.postfixOps
-import ldnstreams.vocab.LDP
+import ldnstream.vocab.LDP
 import rdftools.rdf.api.JenaTools._
 import rdftools.rdf._
 import rdftools.rdf.RdfSchema._
-import ldnstreams.vocab.RSPS
+import ldnstream.vocab.RSPS
 import scala.language.implicitConversions
 import akka.http.scaladsl.model.ContentType
 import ldnstream.model.LdnTypes

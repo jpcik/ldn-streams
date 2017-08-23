@@ -13,7 +13,7 @@ import ldnstream.core.TurtlePayload
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
 import org.apache.jena.vocabulary.RDF
-import ldnstreams.vocab.LDP
+import ldnstream.vocab.LDP
 import rdftools.rdf.RdfTools
 import rdftools.rdf.api.JenaTools
 

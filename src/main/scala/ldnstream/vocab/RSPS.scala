@@ -1,4 +1,4 @@
-package ldnstreams.vocab
+package ldnstream.vocab
 
 import rdftools.rdf.Vocab
 

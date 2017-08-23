@@ -9,11 +9,11 @@ import concurrent.duration._
 import java.io.StringReader
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.RDFDataMgr
-import collection.JavaConversions._
+import collection.JavaConverters._
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.RDFNode
 import java.io.StringWriter
-import ldnstreams.vocab.LDP
+import ldnstream.vocab.LDP
 import rdftools.rdf.api.JenaTools._
 import org.apache.jena.rdf.model.Resource
 import rdftools.rdf.Iri
@@ -32,7 +32,7 @@ trait LdnConsumer extends LdnNode{
 
       val inboxProp:Property=LDP.contains
       val obj:RDFNode=null
-      val trip=m.listStatements(inbox:Iri, inboxProp, obj).toSeq
+      val trip=m.listStatements(inbox:Iri, inboxProp, obj).asScala.toSeq
         .map(s=>s.getObject.asResource.toString).toArray
         
         println(trip.mkString(" "))

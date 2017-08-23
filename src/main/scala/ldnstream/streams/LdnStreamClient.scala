@@ -11,7 +11,7 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.RDFDataMgr
 import rdftools.rdf.api.JenaTools
 import rdftools.rdf.RdfTools
-import ldnstreams.vocab.LDP
+import ldnstream.vocab.LDP
 import rdftools.rdf.RdfSchema
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
@@ -23,6 +23,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import ldnstream.model.LdnTypes
 import ldnstream.model.RdfStream
+import rdftools.rdf.Iri
 
 class LdnStreamClient(name:String)
   (implicit val system:ActorSystem=ActorSystem(name)) extends LdnEntity{
@@ -71,7 +72,7 @@ class LdnStreamClient(name:String)
   def createStreamPayload(target:StreamTarget,streamName:String)(implicit lang:Lang)={
     implicit val m=ModelFactory.createDefaultModel
     val streamUri=target.streamUri(streamName)
-      +=(target.uri.toString,LDP.contains,streamUri)
+      //+=(target.uri.toString,LDP.contains,streamUri:Iri)
       +=(streamUri,RDFS.label,lit(streamName))
       val sw=new StringWriter
       RDFDataMgr.write(sw, m, lang)
