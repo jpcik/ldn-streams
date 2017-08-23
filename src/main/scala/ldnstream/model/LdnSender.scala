@@ -19,11 +19,9 @@ import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.headers._
 import akka.stream.ActorMaterializer
 import ldnstream.Receiver
-import ldnstream.ReceiverRef
-import ldnstream.Sender
 
-trait LdnSender extends Sender with LdnNode {
-  
+trait LdnSender extends LdnNode {
+  import LdnTypes._
   val host=""
   val port=0
 

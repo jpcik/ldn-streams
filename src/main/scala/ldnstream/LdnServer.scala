@@ -12,7 +12,7 @@ object LdnServer extends LdnTarget with LdnReceiver{
   lazy val port=boot._2
   implicit val system = ActorSystem("ldn-system")
   implicit val materializer = ActorMaterializer()
-  implicit val ctx = system.dispatcher
+  //implicit val ctx = system.dispatcher
   
   def boot={
     val p=sys.env.get("PORT")

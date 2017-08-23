@@ -13,8 +13,12 @@ import ldnstream.core.TurtlePayload
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
 import org.apache.jena.vocabulary.RDF
+import ldnstreams.vocab.LDP
+import rdftools.rdf.RdfTools
+import rdftools.rdf.api.JenaTools
 
 trait LdnReceiver extends LdnNode{
+  import LdnTypes._
   import MediaTypes._
   import HttpMethods._
   val receiverRoute = { 
@@ -56,10 +60,11 @@ trait LdnReceiver extends LdnNode{
     }
   }
   lazy val handler=new NotificationHandler(base+"inbox/")
-  
+  import RdfTools._
+  import JenaTools._
   val model=ModelFactory.createDefaultModel
   lazy val inboxRes=ResourceFactory.createResource(base+"inbox")
-  model.add(inboxRes,RDF.`type`,ResourceFactory.createResource(LdnVocab.Container))
+  model.add(inboxRes,RDF.`type`,LDP.Container)
   
   def createNotification(payload:String,mType:MediaType)={
     val bodyOp=Some(JsonLdPayload(payload))
@@ -71,7 +76,7 @@ trait LdnReceiver extends LdnNode{
     }*/
     bodyOp.map {body=>
     val id=handler.create(body)
-    model.add(inboxRes,ResourceFactory.createProperty(LdnVocab.contains),ResourceFactory.createResource(id))
+    model.add(inboxRes,LDP.contains,ResourceFactory.createResource(id))
     Uri(id)
     }
   }

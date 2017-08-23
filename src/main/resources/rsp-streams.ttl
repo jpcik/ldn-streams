@@ -1,0 +1,9 @@
+@prefix rsp-s: <http://w3id.org/rsp/streams#> .
+@prefix : <http://w3id.org/rsp/streams#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+
+rsp-s:Stream a owl:Class.
+rsp-s:InputStream a owl:Class.
+rsp-s:OutputStream a owl:Class.
+rsp-s:input a owl:ObjectProperty.
+rsp-s:output a owl:ObjectProperty.

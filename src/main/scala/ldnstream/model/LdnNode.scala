@@ -17,29 +17,24 @@ import java.io.StringReader
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.rdf.model.ResourceFactory
 import org.apache.jena.rdf.model.ModelFactory
-import ldnstream.ReceiverRef
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import org.apache.jena.rdf.model.Property
+import ldnstreams.vocab.LDP
+import rdftools.rdf.api.JenaTools
+import ldnstream.Receiver
+import rdftools.rdf.Iri
 
-trait LdnNode extends LdnTypes{
-  implicit val system:ActorSystem
-  implicit val materializer:ActorMaterializer
-  implicit val ctx:ExecutionContext
+trait LdnNode extends LdnEntity{
 
+  import LdnTypes._
   def host:String
   def port:Int
   def base=
     if (host!="localhost") s"http://${host}/"
     else s"http://${host}:${port}/"  
-    
-  implicit def toJenaRef(uri:Uri)=
-    ResourceFactory.createResource(uri.toString)
-  
-  implicit def toJenaProp(uri:String):Property=
-    ResourceFactory.createProperty(uri)
-    
+
   def getLinks(res:HttpResponse)=
     res.headers.filter(_.is("link")).map(_.asInstanceOf[Link])
 
@@ -57,6 +52,12 @@ trait LdnNode extends LdnTypes{
     case x  => None
   }
   
+  def extractAccept: HttpHeader => Option[Seq[MediaRange]] = {
+    case h:headers.Accept =>
+      Some(h.mediaRanges)
+    case _ => None
+  }
+  
   def matchWithoutParams(cType:ContentType,mType:MediaType)={
     val m=cType.mediaType
       println("type "+m.mainType+" "+m.subType)
@@ -64,16 +65,10 @@ trait LdnNode extends LdnTypes{
     m.mainType==mType.mainType && m.subType==mType.subType
   }
   
-  def toRdfLang(mediaType:MediaType)= mediaType match{
-    case `text/turtle` => Lang.TURTLE
-    case `application/ld+json` => Lang.JSONLD
-    case _ => Lang.JSONLD
-  }
-  
   def findInbox(links:Seq[Link])={
     links.find (_.values.find ( _.params.find { linkPar => 
-      linkPar.key=="rel" && linkPar.value==LdnVocab.inbox }
-      .isDefined ).isDefined ).map(v=>ReceiverRef(v.values.head.uri))
+      linkPar.key=="rel" && linkPar.value==LDP.inbox.iri.path }
+      .isDefined ).isDefined ).map(v=>Receiver(v.values.head.uri))
   }
   
   def discover(url:String)={
@@ -84,7 +79,6 @@ trait LdnNode extends LdnTypes{
     }
   }
 
-  
   def discoverByLink(url:String)={
     val resp = Http().singleRequest(HttpRequest(HEAD,url))    
     resp.map{res=>
@@ -102,23 +96,11 @@ trait LdnNode extends LdnTypes{
       val m=ModelFactory.createDefaultModel
       val sr=new StringReader(pay)
       RDFDataMgr.read(m, sr, "",lang)
-      val inboxProp=ResourceFactory.createProperty(LdnVocab.inbox)
+      val inboxProp=JenaTools.toJenaProperty(LDP.inbox)
       val inboxNode= m.listStatements(null, inboxProp, null).toSeq.headOption
-      inboxNode.map(stm=>ReceiverRef(Uri(stm.getObject.asResource.getURI)))
+      inboxNode.map(stm=>Receiver(Uri(stm.getObject.asResource.getURI)))
     }}
   }
 }
 
-object LdnVocab {
-  val inbox="http://www.w3.org/ns/ldp#inbox"
-  val contains="http://www.w3.org/ns/ldp#contains"
-  val Container="http://www.w3.org/ns/ldp#Container"
-}
 
-trait LdnTypes {
-  private val utf8 = HttpCharsets.`UTF-8`
-  val `text/turtle`: WithFixedCharset =
-     MediaType.customWithFixedCharset("text", "turtle", utf8)
-  val `application/ld+json`: WithFixedCharset =
-     MediaType.customWithFixedCharset("application", "ld+json", utf8)  
-}

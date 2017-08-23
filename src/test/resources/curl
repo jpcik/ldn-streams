@@ -1,2 +1,46 @@
 curl -i -H "Content-Type: application/ld+json" -X POST -d '{"pipa":"popa"}' http://localhost:8080/inbox
 curl -i -H "Content-Type: application/ld+json" -X GET http://localhost:8080/inbox
+
+
+create str
+curl -i -X POST -d '{"name":"str1"}' http://localhost:8080/streams/inbox
+
+create str data 
+curl -i -H "Content-Type: application/ld+json" -X POST -d '{  "@context": "http://schema.org/",  "@type": "Event", "name": "Nice concert"}' http://localhost:8080/streams/inbox/str1
+
+
+curl -i -X POST -d '{"name":"q1","query":"SELECT ?s ?p ?o WHERE {STREAM <http://localhost:8080/streams/inbox/str1> [RANGE 2s] {?s ?p ?o}}"}' http://localhost:8080/streams/query
+
+
+curl -i -X GET http://localhost:8080/streams/q1
+
+
+
+
+target -- stream
+
+inbox  -- stream/inbox   read/write
+          stream/input   write  push
+          stream/output  read   get 
+          
+          streams/query  query  push
+          |
+          stream/output  get
+          stream/feed    get/sse
+          
+ ldn: get inbox -->     inbox contains notif1,notif2, notif3
+ 
+ ldn-s: get inbox -->   output contains event1,event2,event3
+ ldn-s: get stream -->  stream inbox inbox
+                        stream feed feed       
+                        
+                        stream input inbox                
+                        
+          
+ 
+
+
+
+
+
+

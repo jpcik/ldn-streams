@@ -25,14 +25,12 @@ object ConsumerTest {
     LdnClient.discover(targetUri).map{_.map{inbox=>
       val uris=LdnClient.getNotificationUris(inbox.inboxUri)
       println(s"notifications for target $targetUri")
-      uris.map { seq => 
-        seq.foreach { uri => 
+      uris.map { _.foreach { uri => 
           LdnClient.getNotification(Uri(uri)).map{notif=>
             println(s"notificaiton uri: $uri")
             println(notif)
           }          
-        }
-      }
+      }}
     }}    
   }
   
