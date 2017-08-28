@@ -1,4 +1,4 @@
-package ldnstream.cqels
+package ldnstream.csparql
 
 import ldnstream.streams.LdnStreamClient
 import ldnstream.streams.StreamTarget
@@ -11,8 +11,9 @@ import ldnstream.streams.cqels.CqelsActorReceiver
 import akka.http.scaladsl.model.MediaRange
 import concurrent.duration._
 import language.postfixOps
+import ldnstream.streams.csparql.CsparqlReceiver
 
-object CqelsClientTest {
+object CsparqlClientTest {
 
   def testClient={
     val sys=ActorSystem("testSys")
@@ -30,17 +31,18 @@ object CqelsClientTest {
     implicit val serverIri="http://hevs.ch/streams"
     implicit val ct:ContentType.NonBinary=`application/ld+json`
     implicit val range=MediaRange.apply(`application/ld+json`)
-    val cqels=sys.actorOf(Props(new CqelsActorReceiver(serverIri)), "cqels")
+    val cqels=sys.actorOf(Props(new CsparqlReceiver(serverIri)), "cqels")
     
     client.postStream(cqels, "s1")
-    
-    client.postQuery(cqels,"q1", s"SELECT ?s ?p ?o WHERE {STREAM <$serverIri/s1> [RANGE 2s] {?s ?p ?o}}",ct)
-    
+        
     val ev="""{  "@context": "http://schema.org/",  "@type": "Event", "name": "Nice concert"} """
     sys.scheduler.schedule(0 seconds, 5 seconds){
       client.postStreamItem(cqels, s"$serverIri/s1", ev, ct)
     }
         client.getStreams(cqels)
+
+        
+    client.postQuery(cqels,"q1", s"REGISTER query q1 AS SELECT ?s ?p ?o FROM STREAM <$serverIri/s1> [RANGE 2s STEP 2s] WHERE {?s ?p ?o}",ct)
 
     
     Thread.sleep(10000)
@@ -51,14 +53,6 @@ object CqelsClientTest {
   
   
   def main(args:Array[String]):Unit={
-    testClient
-    /*
-    val client=new LdnStreamClient("cqelsClient")
-    
-    implicit val target=StreamTarget("http://localhost:8080/streams")
-    implicit val cType=`application/ld+json`
-    client.createReadStream("s1")
-    client.getStreams()
-    */
+    testClient    
   }
 }

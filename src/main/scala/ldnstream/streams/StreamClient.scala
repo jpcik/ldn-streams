@@ -24,7 +24,7 @@ import akka.actor.Props
 
 trait StreamClient extends LdnEntity{
   implicit val timeout=Timeout(5 seconds)
-import StreamMsg._
+  import StreamMsg._
 
   def dataPushed(data:String):Unit
 

@@ -1,13 +1,11 @@
 package ldnstream.streams.cqels
 
-import ldnstream.streams.ActorStreamReceiver
-import org.deri.cqels.engine._
+import scala.collection.JavaConverters._
 import org.deri.cqels.data.Mapping
-import scala.collection.mutable.Queue
+import org.deri.cqels.engine._
 import akka.http.scaladsl.model.Uri
+import ldnstream.streams.ActorStreamReceiver
 import rdftools.rdf.Graph
-import akka.stream.scaladsl.SourceQueueWithComplete
-import collection.JavaConverters._
 import rdftools.rdf.api.JenaTools._
 
 class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
@@ -29,33 +27,26 @@ class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
       insert:Map[String,String]=>Unit)={
     
     val slct=cqelsCtx.registerSelect(queryStr)
-    slct.register(new ContinuousListener{
-      def update(map:Mapping)={
-                println("new data")
-
-        val newMap=map.vars.asScala.map{v=>
-          v.getVarName->cqels.decode(map.get(v)).toString
-        }.toMap
-        insert(newMap)
-      }
-    })
+    slct.register(setUpListener(insert))
     selects.put(name,slct)
   }
  
   override def push(id:String,insert:Map[String,String]=>Unit)={
-    val con=new ContinuousListener{
+    val con=setUpListener(insert)
+    selects(id).register(con)
+    ResultHandler(con)
+  }
+  
+  private def setUpListener(insert:Map[String,String]=>Unit)=
+    new ContinuousListener{
       def update(map:Mapping)={
-        println("I am alive")
         val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
         insert(newMap)
       }
     }
-    selects(id).register(con)
-    ResultHandler(con)
-  }
-    
+  
   override def terminatePush(id:String,hnd:ResultHandler)={
     selects(id).unregister(hnd.native.asInstanceOf[ContinuousListener])
   }

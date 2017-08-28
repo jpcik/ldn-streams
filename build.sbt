@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.7",
   "de.heikoseeberger" %% "akka-sse" % "3.0.0",
   "com.github.jpcik" % "cqels" % "1.2.2",
+  "com.github.jpcik.CSPARQL-engine" % "csparql-core" % "0.9.9",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "junit" % "junit" % "4.12" % "test"
 )
