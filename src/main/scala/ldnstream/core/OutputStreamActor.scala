@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream
 class OutputStreamActor(maxSize:Int) extends Actor {
   
  val queue=new Queue[Triple]()
+ val mappingQueue=new Queue[Map[String,String]]()
  
  def receive = {
    case Push(data) => 
@@ -21,10 +22,14 @@ class OutputStreamActor(maxSize:Int) extends Actor {
      queue+=(data)
      if (queue.size>maxSize)
        queue.dequeue
+   case PushMapping(data)=>  
+      mappingQueue+=(data)
+     if (mappingQueue.size>maxSize)
+       mappingQueue.dequeue
    case Last(n) => 
       println("asking last")
       
-      val ddd=(queue.takeRight(n)).toIterator
+      val ddd=(mappingQueue.takeRight(n)).toIterator
       .mkString(",")
       println("tobias "+ddd)
        sender ! ddd

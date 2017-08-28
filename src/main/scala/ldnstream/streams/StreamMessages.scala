@@ -33,6 +33,7 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.MediaRange
+import akka.actor.ActorRef
 
 case class OkMsg(msg:StreamMsg) extends ResponseMsg {
   val status=StatusCodes.OK
@@ -67,7 +68,8 @@ case class RetrieveStreamItem(uri:Uri)(implicit val range:MediaRange)
 case class SendStreamItem(uri:Uri,msg:StreamMsg) extends RequestMsg {
   val range=MediaRanges.`*/*`
 }
-case class PushStreamItems(uri:Uri)(implicit val range:MediaRange) extends RequestMsg {
+case class PushStreamItems(uri:Uri,actor:ActorRef)(implicit val range:MediaRange) 
+  extends RequestMsg {
   val msg=EmptyMsg
 }
 

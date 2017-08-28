@@ -19,11 +19,15 @@ import concurrent.duration._
 import language.postfixOps
 import scala.concurrent.Await
 import ldnstream.vocab.RSPS
+import akka.actor.Actor
+import akka.actor.Props
 
 trait StreamClient extends LdnEntity{
   implicit val timeout=Timeout(5 seconds)
 import StreamMsg._
-  
+
+  def dataPushed(data:String):Unit
+
   def postStream(recv:ActorRef,streamName:String)
     (implicit targetUri:String,ct:ContentType.NonBinary)={
     implicit val lang=toRdfLang(ct)
@@ -61,7 +65,12 @@ import StreamMsg._
     p.map(println)
     
   }
-  
+  def getStreamItemsPush(recv:ActorRef,uri:Uri)
+   (implicit range:MediaRange)={
+    val actor=system.actorOf(Props(new StreamListener),"pipin")
+    val req=PushStreamItems(uri,actor)
+    recv ! req
+  }
   import JenaTools._
   import RdfTools.{str2iri,lit}
   import RdfSchema._
@@ -78,6 +87,13 @@ import StreamMsg._
     +=(iri("http://a.com"),RSPS.query,lit(q) )
     +=(iri("http://a.com"),RDFS.label,lit(name))
     writeRdf(m)    
+  }
+  
+  class StreamListener extends Actor {
+    def receive= {
+      case resp:ResponseMsg=>
+        dataPushed(resp.msg.body)
+    }
   }
   
 }

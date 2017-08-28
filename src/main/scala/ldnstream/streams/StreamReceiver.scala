@@ -40,10 +40,10 @@ trait StreamReceiver extends LdnEntity{
 
   private lazy val streamsHandler=system.actorOf(Props(new StreamsHandler(serverIri)))
   
-  def query(name:String,queryStr:String,
-        queue:SourceQueueWithComplete[Map[String,String]]):Unit
+  def query(name:String,queryStr:String,insert:Map[String,String]=>Unit):Unit
+        //queue:SourceQueueWithComplete[Map[String,String]]):Unit
   def consumeGraph(uri:Uri,g:Graph):Unit
-  def push(id:String,qu:Queue[Map[String,String]]):ResultHandler
+  def push(id:String,inser:Map[String,String]=>Unit):ResultHandler
   def terminatePush(id:String,hnd:ResultHandler):Unit
   
   case class ResultHandler(native:Any)
@@ -61,7 +61,7 @@ trait StreamReceiver extends LdnEntity{
     ErrorMsg(Msg(payload),StatusCodes.InternalServerError)
   }
   
-  private def ok(payload:String,contentType:ContentType.NonBinary=`application/ld+json`)=
+  protected def ok(payload:String,contentType:ContentType.NonBinary=`application/ld+json`)=
     OkMsg(Msg(payload,contentType))
     
   private def asRdf(stream:RdfStream)={
@@ -177,7 +177,9 @@ trait StreamReceiver extends LdnEntity{
         val (streamName,q)=parseQuery(entity)
         val streamUri=s"${serverIri}/$streamName"      
         val queue=getQuerySource(streamName)
-        query(streamName,q,queue)
+        val insert:Map[String,String]=>Unit=(a:Map[String,String])=>queue.offer(a)
+       
+        query(streamUri,q,insert)
         ok(streamUri)
   }
  
@@ -217,11 +219,17 @@ trait StreamReceiver extends LdnEntity{
            
      
   def pushStreamItems(uri:Uri)={
-    val streamUri=uri.toString.replace("streams/push","streams")
+    val streamUri=uri.toString.replace("/push","")
     val qu:Queue[collection.immutable.Map[String,String]]=new Queue[Map[String,String]]
-    val handler=push(uri.toString,qu)
+    val insert=(map:Map[String,String])=>qu.enqueue(map)
+    val handler=push(streamUri,insert)
     (handler,qu)          
       
   }
     
+  def stringize(mapSeq:collection.mutable.Seq[Map[String,String]])={
+    mapSeq.map{m=>
+      m.map{ case (k,v) => s"$k: $v"}.mkString(", ")
+    }.mkString("\n")
+  }
 }

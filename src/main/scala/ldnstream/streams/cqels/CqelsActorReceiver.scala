@@ -26,7 +26,7 @@ class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
   
   //"SELECT ?s ?p ?o WHERE {STREAM <e.com/stream> [RANGE 2s] {?s ?p ?o}}"
   override def query(name:String,queryStr:String,
-      queue:SourceQueueWithComplete[Map[String,String]])={
+      insert:Map[String,String]=>Unit)={
     
     val slct=cqelsCtx.registerSelect(queryStr)
     slct.register(new ContinuousListener{
@@ -36,20 +36,20 @@ class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
         val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
-        queue offer newMap
+        insert(newMap)
       }
     })
     selects.put(name,slct)
   }
  
-  override def push(id:String,qu:Queue[Map[String,String]])={
+  override def push(id:String,insert:Map[String,String]=>Unit)={
     val con=new ContinuousListener{
       def update(map:Mapping)={
         println("I am alive")
         val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
-        qu.enqueue(newMap)
+        insert(newMap)
       }
     }
     selects(id).register(con)

@@ -106,12 +106,6 @@ trait LdnStreamReceiver extends  StreamReceiver with LdnNode{
     path("streams" / Remaining / "push") {id=>
       pathPushStreamItems(id)
     } 
-    
-  def stringize(mapSeq:collection.mutable.Seq[Map[String,String]])={
-    mapSeq.map{m=>
-      m.map{ case (k,v) => s"$k: $v"}.mkString(", ")
-    }.mkString("\n")
-  }
   
   def testStream={
     val strategy=akka.stream.OverflowStrategy.fail

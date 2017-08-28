@@ -21,6 +21,10 @@ object CqelsClientTest {
     val client= new StreamClient{
       implicit val system=sys
       val materializer=ActorMaterializer() 
+      
+      def dataPushed(data:String):Unit={
+        println("finally:   "+  data)
+      }
     }
     
     implicit val serverIri="http://hevs.ch/streams"
@@ -43,8 +47,8 @@ object CqelsClientTest {
     
     Thread.sleep(10000)
     
-    client.getStreamItem(cqels, s"$serverIri/q1/output")
-    
+    //client.getStreamItem(cqels, s"$serverIri/q1/output")
+    client.getStreamItemsPush(cqels, s"$serverIri/q1/push")
   }
   
   

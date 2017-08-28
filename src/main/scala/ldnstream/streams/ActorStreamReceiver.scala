@@ -1,12 +1,14 @@
 package ldnstream.streams
 
 import scala.concurrent.Future
+import concurrent.duration._
+import language.postfixOps
 
 import akka.actor.Actor
 import akka.stream.ActorMaterializer
 
 trait ActorStreamReceiver extends Actor with StreamReceiver{
-  implicit val system=this.context.system
+  implicit val system=context.system
   implicit val materializer:ActorMaterializer= ActorMaterializer()
 
   def answer(f:Future[ResponseMsg])={
@@ -20,17 +22,17 @@ trait ActorStreamReceiver extends Actor with StreamReceiver{
   }
 
   def receive = {
-    case all:RetrieveAllStreams=>
-      answer (getAllStreams(all.range))
+    case req:RetrieveAllStreams=>
+      answer (getAllStreams(req.range))
 
-    case str:CreateStream=>
-      answer (postInputStream(str.msg.body,str.msg.ct))
+    case req:CreateStream=>
+      answer (postInputStream(req.msg.body,req.msg.ct))
       
-    case str:RetrieveStream=>
-      answer (getStream(str.uri, str.range))
+    case req:RetrieveStream=>
+      answer (getStream(req.uri, req.range))
       
-    case msg:SendStreamItem=>
-      answer (postStreamItem(msg.uri, msg.msg.body, msg.msg.ct))
+    case req:SendStreamItem=>
+      answer (postStreamItem(req.uri, req.msg.body, req.msg.ct))
 
     case r:RetrieveStreamItem=>
       retrieveStreamItem(r.uri, None, r.range)
@@ -39,7 +41,12 @@ trait ActorStreamReceiver extends Actor with StreamReceiver{
       answer (postQuery(q.msg.body, q.msg.ct))
 
     case p:PushStreamItems=>
-      pushStreamItems(p.uri)
+      val s=sender
+      val (handler,qu)=pushStreamItems(p.uri)
+      context.system.scheduler.schedule(0 seconds,5 seconds){
+        p.actor ! ok(stringize(qu.dequeueAll(a=>true)))
+      }
+      
   }
 }
 

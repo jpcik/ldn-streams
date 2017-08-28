@@ -1,7 +1,6 @@
 package ldnstream.streams.cqels
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.Queue
 import scala.io.StdIn
 import scala.language.implicitConversions
 import scala.language.postfixOps
@@ -13,7 +12,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.SourceQueueWithComplete
 import ldnstream.streams.LdnStreamReceiver
 import rdftools.rdf.Graph
 import rdftools.rdf.api.JenaTools._
@@ -34,7 +32,7 @@ object CqelsReceiver extends LdnStreamReceiver{
   
   //"SELECT ?s ?p ?o WHERE {STREAM <e.com/stream> [RANGE 2s] {?s ?p ?o}}"
   override def query(name:String,queryStr:String,
-      queue:SourceQueueWithComplete[Map[String,String]])={
+      insert:Map[String,String]=>Unit)={
     
     val slct=cqelsCtx.registerSelect(queryStr)
     slct.register(new ContinuousListener{
@@ -43,20 +41,20 @@ object CqelsReceiver extends LdnStreamReceiver{
         val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
-        queue offer newMap
+        insert(newMap)
       }
     })
     selects.put(name,slct)
   }
  
-  override def push(id:String,qu:Queue[Map[String,String]])={
+  override def push(id:String,insert:Map[String,String]=>Unit)={
     val con=new ContinuousListener{
       def update(map:Mapping)={
         println("I am alive")
         val newMap=map.vars.asScala.map{v=>
           v.getVarName->cqels.decode(map.get(v)).toString
         }.toMap
-        qu.enqueue(newMap)
+        insert(newMap)
       }
     }
     selects(id).register(con)
