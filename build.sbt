@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-sse" % "3.0.0",
   "com.github.jpcik" % "cqels" % "1.2.2",
   "com.github.jpcik.CSPARQL-engine" % "csparql-core" % "0.9.9",
+  "net.sourceforge.owlapi" % "owlapi-api" % "4.0.0",
+  "net.sourceforge.owlapi" % "owlapi-apibinding" % "4.0.0",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "junit" % "junit" % "4.12" % "test"
 )
