@@ -26,24 +26,162 @@ import rdftools.rdf.vocab.RDFS
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OWLClass
-
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom
+import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom
+import org.semanticweb.owlapi.model.OWLRestriction
+import org.semanticweb.owlapi.model.OWLObjectProperty
+import org.semanticweb.owlapi.model.OWLDatatypeRestriction
+import org.semanticweb.owlapi.model.OWLObjectRestriction
+import org.semanticweb.owlapi.model.OWLDataRestriction
+import org.semanticweb.owlapi.model.OWLDataProperty
+import org.semanticweb.owlapi.model.OWLIndividual
+import org.semanticweb.owlapi.model.OWLObjectPropertyExpression
+import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom
+import language.postfixOps
 
 object Manchester {
   implicit val om=OWLManager.createOWLOntologyManager()
   implicit val f=om.getOWLDataFactory
   implicit def iri2iri(iri:Iri)=IRI.create(iri.path)
   implicit def lit2Literal(lit:Literal)=f.getOWLLiteral(lit.value.toString)
-  object Class {
-    def  :: (iri:Iri)(subClassOf:OWLClassExpression)={
-      val cls=f.getOWLClass(iri)
-      f.getOWLSubClassOfAxiom(cls, subClassOf)
+  
+  
+  import rdftools.rdf.RdfTools._
+  //Class (":Person").
+  //  SubClassOf (Coco,Topo,Papo).
+  //  EquivalentTo (Tipo, Cuco, Mato)
+
+  trait PropAssertion 
+  case class ObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
+  case class NegObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
+  
+  case class Individual(ind:OWLIndividual)
+      (Types:OWLClassExpression*)
+      (Facts:PropAssertion*) 
+      (SameAs:OWLIndividual*){
+  }
+  
+  case class ObjectProperty(op:OWLObjectProperty)
+      (Domain:OWLClassExpression*)
+      (Range:OWLClassExpression*)
+  
+  class ClassMan(iri:Iri,subclassOf:Set[OWLSubClassOfAxiom],
+      equivalentTo:Set[OWLEquivalentClassesAxiom]){
+    def SubClassOf(classexps:OWLClassExpression*)={
+      val newsubs=subclassOf ++ classexps.map{cl=>
+        f.getOWLSubClassOfAxiom(f.getOWLClass(iri), cl)
+      }
+      new ClassMan(iri,newsubs,equivalentTo)
+    }
+    def EquivalentTo(classexps:OWLClassExpression*)={
+      val newsubs=equivalentTo ++ classexps.map{cl=>
+        f.getOWLEquivalentClassesAxiom(f.getOWLClass(iri), cl)
+      }
+      new ClassMan(iri,subclassOf,newsubs)
+    }
+    
+      
+  }
+
+  
+  // owl:Thing that hasFirstName exactly 1 and hasFirstName only string[minLength 1]
+ 
+  // thing.that(hasFirstName.exactly(1))
+  
+  implicit class ObjProp(op:OWLObjectProperty){
+    def some(cls:OWLClassExpression)={
+      f.getOWLObjectSomeValuesFrom(op, cls)
+      
+    }
+    def exactly(i:Int)={
+      f.getOWLObjectExactCardinality(i, op)
+    }
+    
+    def only(cls:OWLClassExpression)={
+      f.getOWLObjectAllValuesFrom(op, cls)
+    }
+    
+    def apply(ind:OWLIndividual)=ObjPropAssertion(op,ind)
+  }
+  
+  object not {
+    def apply(restr:OWLClassExpression)={
+      f.getOWLObjectComplementOf(restr)
+    }
+    def apply(opAss:ObjPropAssertion)={
+      NegObjPropAssertion(opAss.prop,opAss.ind)
     }
   }
-  trait desc
-  object SubClassOf extends desc {
-    def :: (supercl:OWLClassExpression)=supercl
+  
+  implicit class DataProp(d:OWLDataProperty){
+    def only(dt:OWLDatatypeRestriction)={
+      f.getOWLDataAllValuesFrom(d, dt)
+    }
+    
   }
-  def Clajss(iri:Iri)=f.getOWLClass(iri)
+  
+  implicit class DataRestr(r:OWLDatatypeRestriction){
+    def and (rest:OWLDatatypeRestriction)={
+      f.getOWLDataIntersectionOf(r,rest)
+    }
+  }
+
+  implicit class Restr(r:OWLObjectRestriction){
+    def and (rest:OWLObjectRestriction)={
+      f.getOWLObjectIntersectionOf(r,rest)
+    }
+  }
+  
+  
+  implicit class ClsXpr(r:OWLClassExpression) {
+    def and(rest:OWLClassExpression)={
+      f.getOWLObjectIntersectionOf(r,rest)
+    }
+  }
+  
+  implicit class ClassExp(c:OWLClass){
+    def that(ax:OWLObjectRestriction)= 
+      f.getOWLObjectIntersectionOf(c,ax)
+  }
+
+  
+  val hasFirstName=f.getOWLObjectProperty(Iri("hasFirstName"))
+  
+  val nn=not (hasFirstName exactly 1)
+  
+  clazz("moto") that 
+        (hasFirstName only clazz("") ) and 
+        {hasFirstName some clazz("") } and 
+        not (hasFirstName exactly 1) 
+  
+  hasFirstName only clazz("")   and (hasFirstName only clazz("") ) 
+  val ind=f.getOWLNamedIndividual(Iri("indi"))
+  
+  Individual(ind) (
+      Types=clazz("mono"),hasFirstName exactly 1) (
+      Facts= hasFirstName (ind) , not (hasFirstName (ind)) ) (
+      SameAs= ind,ind)
+  
+  ObjectProperty(hasFirstName) (
+      Domain=clazz(""),clazz(""))(
+      Range= hasFirstName exactly 1)
+      
+  object Class {
+    def apply(iri:Iri)=new ClassMan(iri,Set.empty,Set.empty)
+  }
+  
+    def clazz(iri:Iri)=f.getOWLClass(iri)
+
+  
+  def cosas ={
+   import rdftools.rdf.RdfTools._
+
+    val pip=
+      Class("mono").
+        SubClassOf(clazz("dibi") that (hasFirstName exactly 1)).
+        EquivalentTo(clazz("toto") and (hasFirstName some clazz("")))
+  }
+  
 }
 
 object OwlApi {
