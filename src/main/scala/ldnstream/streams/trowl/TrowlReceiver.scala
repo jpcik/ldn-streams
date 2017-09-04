@@ -51,14 +51,29 @@ object Manchester {
   //  SubClassOf (Coco,Topo,Papo).
   //  EquivalentTo (Tipo, Cuco, Mato)
 
-  trait PropAssertion 
+  trait PropAssertion {
+    def :: (pa:PropAssertion)= List(this,pa)
+  }
   case class ObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
   case class NegObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
   
+  class IndividualFrame(ind:OWLIndividual){
+    def Types(types:OWLClassExpression*)={
+    }
+  }
+  
   case class Individual(ind:OWLIndividual)
-      (Types:OWLClassExpression*)
+      (Types:OWLClassExpression* )
       (Facts:PropAssertion*) 
-      (SameAs:OWLIndividual*){
+      (SameAs:Seq[OWLIndividual] ){
+  
+  }
+  object Individual {
+    def apply(iri:Iri,Types:Seq[OWLClassExpression],
+      Facts:Seq[PropAssertion],
+      SameAs:Seq[OWLIndividual]=Seq.empty):Individual=Individual(f.getOWLNamedIndividual(iri))(Types:_*)(Facts:_*)(SameAs)
+     
+      //def apply(iri:Iri)(Types:OWLClassExpression*):Individual=Individual(f.getOWLNamedIndividual(iri))(Types:_*)()()
   }
   
   case class ObjectProperty(op:OWLObjectProperty)
@@ -137,6 +152,8 @@ object Manchester {
     def and(rest:OWLClassExpression)={
       f.getOWLObjectIntersectionOf(r,rest)
     }
+    def :: (cl:OWLClassExpression)=List(r,cl)
+
   }
   
   implicit class ClassExp(c:OWLClass){
@@ -144,6 +161,10 @@ object Manchester {
       f.getOWLObjectIntersectionOf(c,ax)
   }
 
+  implicit class Indi(i:OWLIndividual) {
+    def :: (i2:OWLIndividual)=  List (i,i2)
+  }
+  
   
   val hasFirstName=f.getOWLObjectProperty(Iri("hasFirstName"))
   
@@ -156,14 +177,20 @@ object Manchester {
   
   hasFirstName only clazz("")   and (hasFirstName only clazz("") ) 
   val ind=f.getOWLNamedIndividual(Iri("indi"))
+    
+  val indi=Individual ("iri",
+      Types= clazz("loro") ::  (hasFirstName exactly 1) :: clazz("") ,
+      Facts=Seq())                                                                                                                                                                                                                                                                                                                                                                                                                                                               
   
-  Individual(ind) (
-      Types=clazz("mono"),hasFirstName exactly 1) (
-      Facts= hasFirstName (ind) , not (hasFirstName (ind)) ) (
-      SameAs= ind,ind)
+  Individual( "coso",
+     Types=  clazz("mono") ::
+             (hasFirstName exactly 1) ,
+     Facts=  (hasFirstName (ind)) :: 
+             (not (hasFirstName (ind)) ) ,
+     SameAs= ind :: ind )
   
   ObjectProperty(hasFirstName) (
-      Domain=clazz(""),clazz(""))(
+      Domain=clazz(""),clazz("") ) (
       Range= hasFirstName exactly 1)
       
   object Class {
