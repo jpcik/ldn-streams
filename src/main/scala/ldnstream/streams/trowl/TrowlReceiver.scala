@@ -38,12 +38,33 @@ import org.semanticweb.owlapi.model.OWLIndividual
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom
 import language.postfixOps
+import org.semanticweb.owlapi.model.OWLObjectPropertyCharacteristicAxiom
+import org.semanticweb.owlapi.model.OWLObject
+import org.semanticweb.owlapi.model.OWLProperty
+import org.semanticweb.owlapi.model.OWLPropertyExpression
+import org.semanticweb.owlapi.model.OWLAnnotationSubject
+import org.semanticweb.owlapi.model.OWLDataRange
+import org.semanticweb.owlapi.model.OWLDatatype
+import org.semanticweb.owlapi.model.OWLDataPropertyExpression
+import org.semanticweb.owlapi.vocab.OWLFacet
+import org.semanticweb.owlapi.model.OWLFacetRestriction
+import org.semanticweb.owlapi.model.OWLOntologyIRIMapper
+import org.semanticweb.owlapi.model.OWLOntology
+import rdftools.rdf.Class
+import org.semanticweb.owlapi.model.PrefixManager
+import org.semanticweb.owlapi.util.DefaultPrefixManager
+import rdftools.rdf.Bnode
 
 object Manchester {
   implicit val om=OWLManager.createOWLOntologyManager()
   implicit val f=om.getOWLDataFactory
   implicit def iri2iri(iri:Iri)=IRI.create(iri.path)
-  implicit def lit2Literal(lit:Literal)=f.getOWLLiteral(lit.value.toString)
+  implicit def lit2Literal(lit:Literal)=lit.value match {
+    case i:Int=>f.getOWLLiteral(i)
+    case d:Double=>f.getOWLLiteral(d)
+    case s:String=>f.getOWLLiteral(s)
+    case b:Boolean=>f.getOWLLiteral(b)
+  }
   
   
   import rdftools.rdf.RdfTools._
@@ -57,19 +78,64 @@ object Manchester {
   case class ObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
   case class NegObjPropAssertion(prop:OWLObjectProperty,ind:OWLIndividual) extends PropAssertion
   
+  trait PropertyCharacteristic
+  
+  object Functional extends PropertyCharacteristic
+  object InverseFunctional extends PropertyCharacteristic
+  object Reflexive extends PropertyCharacteristic
+  object Irreflexive extends PropertyCharacteristic
+  object Symmetric extends PropertyCharacteristic
+  object Asymmetric extends PropertyCharacteristic
+  object Transitive extends PropertyCharacteristic
+  
+  class ObjectPropertyFrame(op:OWLObjectProperty)
+    (Characteristics:Seq[PropertyCharacteristic])
+    (Domain:Seq[OWLClassExpression])
+    (Range:Seq[OWLClassExpression]) {
+    val domainAxioms=Domain map {domain=>
+     
+      f.getOWLObjectPropertyDomainAxiom(op, domain)
+    }
+    val characteristicAxioms:Seq[OWLObjectPropertyCharacteristicAxiom]=Characteristics map {
+      case Functional=>f.getOWLFunctionalObjectPropertyAxiom(op)
+      case InverseFunctional=>f.getOWLInverseFunctionalObjectPropertyAxiom(op)
+      case Reflexive=>f.getOWLReflexiveObjectPropertyAxiom(op)
+      case Irreflexive=>f.getOWLIrreflexiveObjectPropertyAxiom(op)
+      case Symmetric=>f.getOWLSymmetricObjectPropertyAxiom(op)
+      case Asymmetric=>f.getOWLAsymmetricObjectPropertyAxiom(op)
+      case Transitive=>f.getOWLTransitiveObjectPropertyAxiom(op)     
+    }
+    if (Characteristics.contains(Functional))
+      f.getOWLFunctionalObjectPropertyAxiom(op)
+  }
+  
+  class Annotated(o:OWLClassExpression,a:Set[OWLAnnotation]){
+    def :: (ann:Annotated)=List(this,ann)
+    
+  }
+  
+  
+  implicit class OWLObjectPlus[T<:OWLClassExpression](o:T) extends Annotated(o,Set.empty){
+    def annot(as:OWLAnnotation*)=new Annotated(o,as.toSet)    
+    def annotations=annot _
+    
+  }
+  
+  
+  
   class IndividualFrame(ind:OWLIndividual){
     def Types(types:OWLClassExpression*)={
     }
   }
   
   case class Individual(ind:OWLIndividual)
-      (Types:OWLClassExpression* )
+      (Types:Annotated* )
       (Facts:PropAssertion*) 
       (SameAs:Seq[OWLIndividual] ){
   
   }
   object Individual {
-    def apply(iri:Iri,Types:Seq[OWLClassExpression],
+    def apply(iri:Iri,Types:Seq[Annotated],
       Facts:Seq[PropAssertion],
       SameAs:Seq[OWLIndividual]=Seq.empty):Individual=Individual(f.getOWLNamedIndividual(iri))(Types:_*)(Facts:_*)(SameAs)
      
@@ -152,13 +218,15 @@ object Manchester {
     def and(rest:OWLClassExpression)={
       f.getOWLObjectIntersectionOf(r,rest)
     }
-    def :: (cl:OWLClassExpression)=List(r,cl)
+    //def :: (cl:OWLClassExpression)=List(r,cl)
 
   }
   
   implicit class ClassExp(c:OWLClass){
     def that(ax:OWLObjectRestriction)= 
       f.getOWLObjectIntersectionOf(c,ax)
+    def ⊑ (ce:OWLClassExpression)=
+      f.getOWLSubClassOfAxiom(c, ce)
   }
 
   implicit class Indi(i:OWLIndividual) {
@@ -169,7 +237,10 @@ object Manchester {
   val hasFirstName=f.getOWLObjectProperty(Iri("hasFirstName"))
   
   val nn=not (hasFirstName exactly 1)
-  
+
+
+  clazz("topo") ⊑ clazz("pipo")
+ 
   clazz("moto") that 
         (hasFirstName only clazz("") ) and 
         {hasFirstName some clazz("") } and 
@@ -179,7 +250,7 @@ object Manchester {
   val ind=f.getOWLNamedIndividual(Iri("indi"))
     
   val indi=Individual ("iri",
-      Types= clazz("loro") ::  (hasFirstName exactly 1) :: clazz("") ,
+      Types= clazz("loro")  ::  (hasFirstName exactly 1 annot null) :: (clazz("") annot null) ,
       Facts=Seq())                                                                                                                                                                                                                                                                                                                                                                                                                                                               
   
   Individual( "coso",
@@ -212,43 +283,266 @@ object Manchester {
 }
 
 object OwlApi {
+  type Annotations=Set[OWLAnnotation]
+  val øA = Set.empty[OWLAnnotation]
+  
   implicit val om=OWLManager.createOWLOntologyManager()
   implicit val f=om.getOWLDataFactory
   implicit def iri2iri(iri:Iri)=IRI.create(iri.path)
-  implicit def lit2Literal(lit:Literal)=f.getOWLLiteral(lit.value.toString)
+  implicit def bnode2Anon(bnode:Bnode)=f.getOWLAnonymousIndividual(bnode.id)
+  implicit def lit2Literal(lit:Literal)=lit.value match {
+    case i:Int=>f.getOWLLiteral(i)
+    case d:Double=>f.getOWLLiteral(d)
+    case s:String=>f.getOWLLiteral(s)
+    case b:Boolean=>f.getOWLLiteral(b)
+  }
+  implicit def clazz2OwlCLass(c:Class)=f.getOWLClass(c.iri)
+  implicit def iri2Range(iri:Iri)=f.getOWLDatatype(iri)
+  
   def createOntology(iri:Iri)=om.createOntology(iri)
+  
+  implicit class OwlStringContext(sc:StringContext)(implicit prefixes:PrefixManager) {
+    def i(args:Any*)=OwlApi.individual(sc.parts.mkString)
+    def ind(args:Any*)=i(args) 
+    def c(args:Any*)=OwlApi.Class(sc.parts.mkString)
+    def op(args:Any*)=OwlApi.objectProperty(sc.parts.mkString)
+    def dp(args:Any*)=OwlApi.dataProperty(sc.parts.mkString)
+    def ap(args:Any*)=OwlApi.annotationProperty(sc.parts.mkString)
+
+  }
+  
   def individual(iri:Iri)=f.getOWLNamedIndividual(iri)
+  def individual(name:String)(implicit prefixes:PrefixManager)={
+    f.getOWLNamedIndividual(name, prefixes)
+  }
   def clazz(iri:Iri)=f.getOWLClass(iri)
+  def Class(shortIri:String)(implicit prefixes:PrefixManager)={
+    f.getOWLClass(shortIri, prefixes)  
+  }
+  def Datatype(shortIri:String)(implicit prefixes:PrefixManager)={
+    f.getOWLDatatype(shortIri, prefixes)
+  }
+  def NamedIndividual(shortIri:String)(implicit prefixes:PrefixManager)=
+    f.getOWLNamedIndividual(shortIri,prefixes)
+  
   def objectProperty(iri:Iri)=f.getOWLObjectProperty(iri)
-  def dataPoperty(iri:Iri)=f.getOWLDataProperty(iri)
+  def objectProperty(name:String)(implicit prefixes:PrefixManager)=
+    f.getOWLObjectProperty(name, prefixes)
+  def dataProperty(iri:Iri)=f.getOWLDataProperty(iri)
+  def dataProperty(name:String)(implicit prefixes:PrefixManager)={
+    f.getOWLDataProperty(name, prefixes)
+  }
+  def annotationProperty(iri:Iri)=f.getOWLAnnotationProperty(iri)
+  def annotationProperty(name:String)(implicit prefixes:PrefixManager)=
+    f.getOWLAnnotationProperty(name, prefixes)
   
   def declaration(entity:OWLEntity)=f.getOWLDeclarationAxiom(entity)
   
-  def prefix(prefixName:String,fullIri:String)(implicit f:OWLDataFactory)={
-     val imports=   f.getOWLImportsDeclaration(Iri(""))
-     
-  }
   def imports(iri:Iri)=f.getOWLImportsDeclaration(iri)
   
+  // classes
   def subClassOf(subClass:OWLClassExpression,superClass:OWLClassExpression,annotations:Set[OWLAnnotation]=Set.empty)=
     f.getOWLSubClassOfAxiom(subClass, superClass,annotations.asJava)
   def equivalentClasses(class1:OWLClassExpression,class2:OWLClassExpression,annotations:Set[OWLAnnotation])=
     f.getOWLEquivalentClassesAxiom(class1, class2,annotations.asJava)
   def equivalentClasses(classes:Set[OWLClassExpression],annotations:Set[OWLAnnotation]=Set.empty)=
     f.getOWLEquivalentClassesAxiom(classes.asJava,annotations.asJava)
+  def equivalentClasses(classes:OWLClassExpression*)=
+    f.getOWLEquivalentClassesAxiom(classes.toSet.asJava)
   def disjointClasses(classes:Set[OWLClassExpression],annotations:Set[OWLAnnotation]=Set.empty)=
     f.getOWLDisjointClassesAxiom(classes.asJava, annotations.asJava)
+  def disjointClasses(classes:OWLClassExpression*)=
+    f.getOWLDisjointClassesAxiom(classes:_*)
   def disjointUnion(cls:OWLClass,classes:Set[OWLClassExpression],annotations:Set[OWLAnnotation]=Set.empty)=
     f.getOWLDisjointUnionAxiom(cls,classes.asJava, annotations.asJava)
+  def disjointUnion(cls:OWLClass,classes:OWLClassExpression*)=
+    f.getOWLDisjointUnionAxiom(cls,classes.toSet.asJava)
+  def hasKey(cls:OWLClassExpression,props:Set[OWLPropertyExpression],annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLHasKeyAxiom(cls, props.asJava,annotations.asJava)
     
-  def annotationProperty(iri:Iri)=f.getOWLAnnotationProperty(iri)
+  //annotations
+  def annotationAssertion(prop:OWLAnnotationProperty,subj:OWLAnnotationSubject,
+      value:OWLAnnotationValue, annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLAnnotationAssertionAxiom(prop, subj, value,annotations.asJava)
+  def annotationAssertion(subj:OWLAnnotationSubject,
+      annotation:OWLAnnotation, annotations:Set[OWLAnnotation])=
+    f.getOWLAnnotationAssertionAxiom(subj,annotation,annotations.asJava)
+  def annotationAssertion(subj:OWLAnnotationSubject,
+      annotation:OWLAnnotation)=
+    f.getOWLAnnotationAssertionAxiom(subj,annotation)
+     
+  //datatypes
+  def datatypeDefinition(dtype:OWLDatatype,range:OWLDataRange,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDatatypeDefinitionAxiom(dtype,range,annotations.asJava)
+  
+  //object properties
+  def objectPropertyDomain(prop:OWLObjectPropertyExpression,cls:OWLClassExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLObjectPropertyDomainAxiom(prop, cls,annotations.asJava)
+  def objectPropertyRange(prop:OWLObjectPropertyExpression,cls:OWLClassExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLObjectPropertyRangeAxiom(prop, cls,annotations.asJava)
+  def objectFunctionalProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLFunctionalObjectPropertyAxiom(prop,annotations.asJava)
+  def objectInverseFunctionalProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLInverseFunctionalObjectPropertyAxiom(prop,annotations.asJava)  
+  def objectReflexiveProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLReflexiveObjectPropertyAxiom(prop,annotations.asJava)
+  def objectIrreflexiveProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLIrreflexiveObjectPropertyAxiom(prop,annotations.asJava)
+  def objectSymmetricProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLSymmetricObjectPropertyAxiom(prop,annotations.asJava)
+  def objectAsymmetricProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLAsymmetricObjectPropertyAxiom(prop,annotations.asJava)
+  def objectTransitiveProperty(prop:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLTransitiveObjectPropertyAxiom(prop,annotations.asJava)
+  def subObjectPropertyOf(subProp:OWLObjectPropertyExpression,superProp:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLSubObjectPropertyOfAxiom(subProp, superProp,annotations.asJava)
+  def equivalentObjectProperties(props:Set[OWLObjectPropertyExpression],annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLEquivalentObjectPropertiesAxiom(props.asJava,annotations.asJava)
+  def equivalentObjectProperties(prop1:OWLObjectPropertyExpression,prop2:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation])=
+    f.getOWLEquivalentObjectPropertiesAxiom(prop1,prop2,annotations.asJava)  
+  def equivalentObjectProperties(prop1:OWLObjectPropertyExpression,prop2:OWLObjectPropertyExpression)=
+    f.getOWLEquivalentObjectPropertiesAxiom(prop1,prop2)  
+  def disjointObjectProperties(props:Set[OWLObjectPropertyExpression],annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDisjointObjectPropertiesAxiom(props.asJava,annotations.asJava)
+  def inverseObjectProperties(prop1:OWLObjectPropertyExpression,prop2:OWLObjectPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLInverseObjectPropertiesAxiom(prop1,prop2,annotations.asJava)
+
+  //data properties
+  def dataPropertyDomain(prop:OWLDataPropertyExpression,cls:OWLClassExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDataPropertyDomainAxiom(prop, cls,annotations.asJava)
+  def dataPropertyRange(prop:OWLDataPropertyExpression,range:OWLDataRange,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDataPropertyRangeAxiom(prop, range,annotations.asJava)
+  def functionalDataProperty(prop:OWLDataPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLFunctionalDataPropertyAxiom(prop,annotations.asJava)
+  def subDataPropertyOf(subProp:OWLDataPropertyExpression, superProp:OWLDataPropertyExpression,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLSubDataPropertyOfAxiom(subProp,superProp,annotations.asJava)
+  def equivalentDataProperties(prop1:OWLDataPropertyExpression,prop2:OWLDataPropertyExpression,annotations:Set[OWLAnnotation])=
+    f.getOWLEquivalentDataPropertiesAxiom(prop1,prop2,annotations.asJava)
+  def equivalentDataProperties(prop1:OWLDataPropertyExpression,prop2:OWLDataPropertyExpression)=
+    f.getOWLEquivalentDataPropertiesAxiom(prop1,prop2)
+  def equivalentDataProperties(props:Set[OWLDataPropertyExpression],annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLEquivalentDataPropertiesAxiom(props.asJava,annotations.asJava)
+  def disjointDataProperties(props:Set[OWLDataPropertyExpression],annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDisjointDataPropertiesAxiom(props.asJava,annotations.asJava)
+  
+  // annotation properties
+  def annotationPropertyDomain(prop:OWLAnnotationProperty,iri:Iri,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLAnnotationPropertyDomainAxiom(prop, iri,annotations.asJava)
+  def annotationPropertyRange(prop:OWLAnnotationProperty,iri:Iri,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLAnnotationPropertyRangeAxiom(prop, iri,annotations.asJava)
+  def subAnnotationPropertyOf(subProp:OWLAnnotationProperty,superProp:OWLAnnotationProperty,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLSubAnnotationPropertyOfAxiom(subProp, superProp, annotations.asJava)
+    
+  // individuals
+  def classAssertion(cls:OWLClassExpression,ind:OWLIndividual,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLClassAssertionAxiom(cls, ind,annotations.asJava)
+  def objectPropertyAssertion(prop:OWLObjectPropertyExpression,subj:OWLIndividual,obj:OWLIndividual,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLObjectPropertyAssertionAxiom(prop, subj, obj,annotations.asJava)
+  def negativeObjectPropertyAssertion(prop:OWLObjectPropertyExpression,subj:OWLIndividual,obj:OWLIndividual,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLNegativeObjectPropertyAssertionAxiom(prop, subj, obj,annotations.asJava)
+  def dataPropertyAssertion(prop:OWLDataPropertyExpression,subj:OWLIndividual,obj:OWLLiteral,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLDataPropertyAssertionAxiom(prop, subj, obj,annotations.asJava)
+  def negativeDataPropertyAssertion(prop:OWLDataPropertyExpression,subj:OWLIndividual,obj:OWLLiteral,annotations:Set[OWLAnnotation]=Set.empty)=
+    f.getOWLNegativeDataPropertyAssertionAxiom(prop, subj, obj,annotations.asJava)
+  def sameIndividual(inds:Set[OWLIndividual],annotations:Annotations=øA)=
+    f.getOWLSameIndividualAxiom(inds.asJava,annotations.asJava)
+  def sameIndividual(inds:OWLIndividual*)=
+    f.getOWLSameIndividualAxiom(inds.toSet.asJava)
+  def differentIndividuals(inds:Set[OWLIndividual],annotations:Annotations=øA)=
+    f.getOWLDifferentIndividualsAxiom(inds.asJava,annotations.asJava)
+  def differentIndividuals(inds:OWLIndividual*)=
+    f.getOWLDifferentIndividualsAxiom(inds.toSet.asJava)
+    
+  // datatype restrictions
+  def datatypeRestriction(dtype:OWLDatatype,facet:OWLFacet,lit:OWLLiteral)=
+    f.getOWLDatatypeRestriction(dtype, facet, lit)
+  def datatypeRestriction(dtype:OWLDatatype,facets:Set[OWLFacetRestriction])=
+    f.getOWLDatatypeRestriction(dtype, facets.asJava)
+  def dataOneOf(literals:Set[OWLLiteral])=
+    f.getOWLDataOneOf(literals.asJava)
+  def dataOneOf(literals:OWLLiteral*)=
+    f.getOWLDataOneOf(literals:_*)
+  def dataComplementOf(range:OWLDataRange)=
+    f.getOWLDataComplementOf(range)
+  def dataIntersectionOf(ranges:Set[OWLDataRange])=
+    f.getOWLDataIntersectionOf(ranges.asJava)
+  def dataIntersectionOf(ranges:OWLDataRange*)=
+    f.getOWLDataIntersectionOf(ranges:_*)
+  def dataUnionOf(ranges:Set[OWLDataRange])=
+    f.getOWLDataUnionOf(ranges.asJava)
+  def dataUnionOf(ranges:OWLDataRange*)=
+    f.getOWLDataUnionOf(ranges:_*)
+    
+  // object restrictions
+  def inverseObjectProperty(prop1:OWLObjectPropertyExpression,prop2:OWLObjectPropertyExpression,annotations:Annotations=øA)=
+    f.getOWLInverseObjectPropertiesAxiom(prop1, prop2,annotations.asJava)
+  def objectOneOf(inds:Set[OWLIndividual])=
+    f.getOWLObjectOneOf(inds.asJava)
+  def objectOneOf(inds:OWLIndividual*)=
+    f.getOWLObjectOneOf(inds.toSet.asJava)
+  def objectSomeValuesFrom(prop:OWLObjectPropertyExpression,cls:OWLClassExpression)=
+    f.getOWLObjectSomeValuesFrom(prop, cls)
+  def objectAllValuesFrom(prop:OWLObjectPropertyExpression,cls:OWLClassExpression)=
+    f.getOWLObjectAllValuesFrom(prop, cls)
+  def objectHasValue(prop:OWLObjectPropertyExpression,ind:OWLIndividual)=
+    f.getOWLObjectHasValue(prop, ind)
+  def objectMinCardinality(i:Int,prop:OWLObjectPropertyExpression)=
+    f.getOWLObjectMinCardinality(i, prop)
+  def objectMinCardinality(i:Int,prop:OWLObjectPropertyExpression,cls:OWLClassExpression)=
+    f.getOWLObjectMinCardinality(i, prop,cls)
+  def objectMaxCardinality(i:Int,prop:OWLObjectPropertyExpression)=
+    f.getOWLObjectMaxCardinality(i, prop)
+  def objectMaxCardinality(i:Int,prop:OWLObjectPropertyExpression,cls:OWLClassExpression)=
+    f.getOWLObjectMaxCardinality(i, prop,cls)
+  def objectExactCardinality(i:Int,prop:OWLObjectPropertyExpression)=
+    f.getOWLObjectExactCardinality(i, prop)
+  def objectExactCardinality(i:Int,prop:OWLObjectPropertyExpression,cls:OWLClassExpression)=
+    f.getOWLObjectExactCardinality(i, prop,cls)
+  def objectHasSelf(prop:OWLObjectPropertyExpression)=
+    f.getOWLObjectHasSelf(prop)
+    
+  def objectInverseOf(prop:OWLObjectPropertyExpression)=
+    f.getOWLObjectInverseOf(prop)
+    
+  def dataSomeValuesFrom(prop:OWLDataPropertyExpression,range:OWLDataRange)=
+    f.getOWLDataSomeValuesFrom(prop, range)
+  def dataAllValuesFrom(prop:OWLDataPropertyExpression,range:OWLDataRange)=
+    f.getOWLDataAllValuesFrom(prop, range)
+  def dataHasValue(prop:OWLDataPropertyExpression,value:OWLLiteral)=
+    f.getOWLDataHasValue(prop, value)
+  def dataMinCardinality(i:Int,prop:OWLDataPropertyExpression,range:OWLDataRange)=
+    f.getOWLDataMinCardinality(i, prop,range)
+  def dataMinCardinality(i:Int,prop:OWLDataPropertyExpression)=
+    f.getOWLDataMinCardinality(i, prop)
+  def dataMaxCardinality(i:Int,prop:OWLDataPropertyExpression,range:OWLDataRange)=
+    f.getOWLDataMaxCardinality(i, prop,range)
+  def dataMaxCardinality(i:Int,prop:OWLDataPropertyExpression)=
+    f.getOWLDataMaxCardinality(i, prop)  
+  def dataExactCardinality(i:Int,prop:OWLDataPropertyExpression,range:OWLDataRange)=
+    f.getOWLDataExactCardinality(i, prop,range)
+  def dataExactCardinality(i:Int,prop:OWLDataPropertyExpression)=
+    f.getOWLDataExactCardinality(i, prop)  
+    
+  def objectComplementOf(cls:OWLClassExpression)=
+    f.getOWLObjectComplementOf(cls)
+  def objectIntersectionOf(cls:Set[OWLClassExpression])=
+    f.getOWLObjectIntersectionOf(cls.asJava)
+  def objectIntersectionOf(cls:OWLClassExpression*)=
+    f.getOWLObjectIntersectionOf(cls:_*)  
+  def objectUnionOf(cls:Set[OWLClassExpression])=
+    f.getOWLObjectUnionOf(cls.asJava)
+  def objectUnionOf(cls:OWLClassExpression*)=
+    f.getOWLObjectUnionOf(cls:_*)
+  
+  
+    
   def annotation(annProperty:OWLAnnotationProperty,annValue:OWLAnnotationValue)=
     f.getOWLAnnotation(annProperty, annValue)
   def annotation(iriProp:Iri,irival:Iri):OWLAnnotation=
     annotation(annotationProperty(iriProp), irival:IRI)
   def annotation(iriProp:Iri,litval:Literal):OWLAnnotation=
     annotation(annotationProperty(iriProp), litval:OWLLiteral)
-  def ontology(iri:Iri)(imports:OWLImportsDeclaration*)(annotations:OWLAnnotation*)(axioms:OWLAxiom*)={
+  def ontology(iri:Iri,imports:Seq[OWLImportsDeclaration]=Seq.empty,annotations:Seq[OWLAnnotation]=Seq.empty,axioms:Seq[OWLAxiom]=Seq.empty)={
     val o=createOntology(iri)
     imports.foreach{imp=>
       om.applyChange(new AddImport(o, imp))
@@ -260,6 +554,44 @@ object OwlApi {
       om.applyChange(new AddAxiom(o,axiom))  
     }
     o
+  }
+  //def ontology(iri:Iri,imports:Seq[OWLImportsDeclaration]=Seq.empty):OWLOntology=
+  //  ontology(iri,imports,Seq.empty,Seq.empty)
+  def ontology(iri:Iri,axioms:Seq[OWLAxiom]):OWLOntology={
+    ontology(iri,Seq.empty,Seq.empty,axioms)
+  }
+
+  
+  implicit class ImportPlus(imports:OWLImportsDeclaration) {
+  //  def :: (imp2:OWLImportsDeclaration)=List(imports,imp2)
+  }
+  
+  implicit def ImportsToList(imports:OWLImportsDeclaration)=List(imports)
+  implicit def AnnotationToList(annot:OWLAnnotation)=
+    List(annot)
+ 
+  implicit def AxiomToList(axiom:OWLAxiom)=List(axiom)  
+  
+  def Prefix(pref:String,iri:String)(implicit prefixes:PrefixManager)=
+    prefixes.setPrefix(pref, iri)
+    
+  def createPrefixManager=new DefaultPrefixManager
+  
+  implicit class OntologyPlus(o:OWLOntology) {
+    def individuals=o.getIndividualsInSignature()
+    def individuals(cls:OWLClassExpression)={
+      o.getClassAssertionAxioms(cls).asScala.map {ax=>ax.getIndividual}
+    }
+    def classExpressions(ind:OWLIndividual)=
+      o.getClassAssertionAxioms(ind).asScala.map(_.getClassExpression)
+    
+    def objectProperties(ind:OWLIndividual)=
+      o.getObjectPropertyAssertionAxioms(ind).asScala.map(_.getProperty)
+      
+    def objectPropertyObjects(ind:OWLIndividual)=
+      o.getObjectPropertyAssertionAxioms(ind).asScala.map(t=>(t.getProperty,t.getObject))
+    
+    
   }
 }
 
@@ -274,20 +606,20 @@ class TrowlReceiver(iri:String) extends ActorStreamReceiver{
   
   
   //implicit val fact=om.getOWLDataFactory
-  
+  implicit val pref=new DefaultPrefixManager
   val onto=
-    ontology("http://example.org/") {
-      imports("http://importedOnto1.org/")
-      imports("http://importedOnto2.org/") }  {
+    ontology("http://example.org/",
+      imports("http://importedOnto1.org/") ::
+      imports("http://importedOnto2.org/"),
         
-      annotation(RDFS.label,lit("helo")) }  {
+      annotation(RDFS.label,lit("helo")) ,  
         
-      declaration(clazz("Clase"))
-      declaration(objectProperty("someProp"))
-      subClassOf(clazz("Copo"), clazz("Jipo"))
-      equivalentClasses(Set(clazz("Toto"),clazz("Mimi"))) }
+      declaration(clazz("Clase")) ::
+      declaration(objectProperty("someProp")) ::
+      subClassOf(clazz("Copo"), clazz("Jipo")) ::
+      equivalentClasses(clazz("Toto"),clazz("Mimi")) :: Nil )
   
-  
+      
   
   val relfactory = new RELReasonerFactory();
   val reasoner = relfactory.createReasoner(onto);
