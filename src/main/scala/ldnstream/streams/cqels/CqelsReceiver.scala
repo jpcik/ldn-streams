@@ -14,7 +14,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
 import ldnstream.streams.LdnStreamReceiver
 import rdftools.rdf.Graph
-import rdftools.rdf.api.JenaTools._
+import rdftools.rdf.jena._
     
 object CqelsReceiver extends LdnStreamReceiver{
   implicit val system = ActorSystem("LdnCqels")

@@ -4,7 +4,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import org.apache.jena.riot.Lang
 import org.apache.jena.rdf.model.ModelFactory
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 import rdftools.rdf.RdfTools
 import rdftools.rdf.RdfSchema
 import ldnstream.vocab.LDP
@@ -71,13 +71,11 @@ trait StreamClient extends LdnEntity{
     val req=PushStreamItems(uri,actor)
     recv ! req
   }
-  import JenaTools._
-  import RdfTools.{str2iri,lit}
-  import RdfSchema._
+  import RdfTools._
   private def createStreamPayload(streamName:String)(implicit targetUri:String,lang:Lang)={
     implicit val m=ModelFactory.createDefaultModel
     val streamUri=s"$targetUri/$streamName"
-      +=(targetUri:Iri,LDP.contains,streamUri:Iri)
+      +=(targetUri:Iri,LDP.contains:Iri,streamUri:Iri)
       +=(streamUri,RDFS.label,lit(streamName))
       writeRdf(m)
   }

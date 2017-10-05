@@ -14,9 +14,10 @@ import language.postfixOps
 
 object CqelsClientTest {
 
+  val sys=ActorSystem("testSys")
+  implicit val ctx=sys.dispatcher
+
   def testClient={
-    val sys=ActorSystem("testSys")
-    implicit val ctx=sys.dispatcher
     
     val client= new StreamClient{
       implicit val system=sys
@@ -52,13 +53,6 @@ object CqelsClientTest {
   
   def main(args:Array[String]):Unit={
     testClient
-    /*
-    val client=new LdnStreamClient("cqelsClient")
-    
-    implicit val target=StreamTarget("http://localhost:8080/streams")
-    implicit val cType=`application/ld+json`
-    client.createReadStream("s1")
-    client.getStreams()
-    */
+
   }
 }

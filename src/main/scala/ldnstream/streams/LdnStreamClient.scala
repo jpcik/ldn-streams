@@ -9,7 +9,7 @@ import scala.concurrent.Await
 import language.postfixOps
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.RDFDataMgr
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 import rdftools.rdf.RdfTools
 import ldnstream.vocab.LDP
 import rdftools.rdf.RdfSchema
@@ -66,12 +66,10 @@ class LdnStreamClient(name:String)
     println(popo.status)
   }
   
-  import JenaTools._
   import RdfTools._
-  import RdfSchema._
   def createStreamPayload(target:StreamTarget,streamName:String)(implicit lang:Lang)={
     implicit val m=ModelFactory.createDefaultModel
-    val streamUri=target.streamUri(streamName)
+    val streamUri:Iri=target.streamUri(streamName)
       //+=(target.uri.toString,LDP.contains,streamUri:Iri)
       +=(streamUri,RDFS.label,lit(streamName))
       val sw=new StringWriter

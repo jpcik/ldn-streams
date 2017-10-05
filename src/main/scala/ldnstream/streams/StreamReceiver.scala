@@ -24,8 +24,7 @@ import ldnstream.vocab.LDP
 import ldnstream.vocab.RSPS
 import rdftools.rdf._
 import rdftools.rdf.RdfSchema._
-import rdftools.rdf.api.JenaGraphs
-import rdftools.rdf.api.JenaTools._
+import rdftools.rdf.jena._
 import rdftools.rdf.vocab.RDFS
 import spray.json._
 import org.apache.jena.rdf.model.Model
@@ -206,7 +205,6 @@ trait StreamReceiver extends LdnEntity{
         strr
     }
         
-  import JenaGraphs._
   def postStreamItem(uri:Uri,pay:String,ct:ContentType):ResponseMsg=
     matching(ct) match {
       case None => mediaTypeNotSupported(ct)

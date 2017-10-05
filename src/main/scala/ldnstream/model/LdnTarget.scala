@@ -10,7 +10,7 @@ import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
 import ldnstream.vocab.LDP
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 
 trait LdnTarget extends LdnNode {
  import MediaTypes._
@@ -27,7 +27,7 @@ trait LdnTarget extends LdnNode {
   def payloadInbox(uri:Uri,lang:Lang)={
     val m=ModelFactory.createDefaultModel
     val thisResource=ResourceFactory.createResource(uri.toString)
-    val inboxProp=JenaTools.toJenaProperty(LDP.inbox)
+    val inboxProp=toJenaProperty(LDP.inbox)
     val inboxUri=ResourceFactory.createResource(s"${uri}inbox")
     m.add(thisResource,inboxProp,inboxUri)
     val sw=new StringWriter

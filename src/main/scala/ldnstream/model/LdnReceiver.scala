@@ -15,7 +15,7 @@ import java.io.StringWriter
 import org.apache.jena.vocabulary.RDF
 import ldnstream.vocab.LDP
 import rdftools.rdf.RdfTools
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 
 trait LdnReceiver extends LdnNode{
   import LdnTypes._
@@ -61,7 +61,6 @@ trait LdnReceiver extends LdnNode{
   }
   lazy val handler=new NotificationHandler(base+"inbox/")
   import RdfTools._
-  import JenaTools._
   val model=ModelFactory.createDefaultModel
   lazy val inboxRes=ResourceFactory.createResource(base+"inbox")
   model.add(inboxRes,RDF.`type`,LDP.Container)

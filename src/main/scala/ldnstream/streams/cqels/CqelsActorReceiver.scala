@@ -6,7 +6,7 @@ import org.deri.cqels.engine._
 import akka.http.scaladsl.model.Uri
 import ldnstream.streams.ActorStreamReceiver
 import rdftools.rdf.Graph
-import rdftools.rdf.api.JenaTools._
+import rdftools.rdf.jena._
 
 class CqelsActorReceiver(iri:String) extends ActorStreamReceiver{
   val cqelsCtx=new ExecContext("./",false)

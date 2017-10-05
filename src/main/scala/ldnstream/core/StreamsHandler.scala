@@ -14,7 +14,7 @@ import akka.util.Timeout
 import concurrent.duration._
 import scala.language.postfixOps
 import ldnstream.vocab.LDP
-import rdftools.rdf.api.JenaTools._
+import rdftools.rdf.jena._
 import rdftools.rdf._
 import rdftools.rdf.RdfSchema._
 import ldnstream.vocab.RSPS

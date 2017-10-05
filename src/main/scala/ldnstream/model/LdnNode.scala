@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 import org.apache.jena.rdf.model.Property
 import ldnstream.vocab.LDP
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 import ldnstream.Receiver
 import rdftools.rdf.Iri
 
@@ -96,7 +96,7 @@ trait LdnNode extends LdnEntity{
       val m=ModelFactory.createDefaultModel
       val sr=new StringReader(pay)
       RDFDataMgr.read(m, sr, "",lang)
-      val inboxProp=JenaTools.toJenaProperty(LDP.inbox)
+      val inboxProp=toJenaProperty(LDP.inbox)
       val inboxNode= m.listStatements(null, inboxProp, null).asScala.toSeq.headOption
       inboxNode.map(stm=>Receiver(Uri(stm.getObject.asResource.getURI)))
     }}

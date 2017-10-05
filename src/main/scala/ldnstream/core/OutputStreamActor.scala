@@ -6,7 +6,7 @@ import ldnstream.model.RdfStream
 import rdftools.rdf.Triple
 import org.apache.jena.riot.RDFDataMgr
 import java.io.StringWriter
-import rdftools.rdf.api.JenaTools
+import rdftools.rdf.jena._
 import collection.JavaConversions._
 import java.io.ObjectOutputStream
 

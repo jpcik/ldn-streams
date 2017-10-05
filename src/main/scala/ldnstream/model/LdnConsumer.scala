@@ -14,7 +14,7 @@ import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.RDFNode
 import java.io.StringWriter
 import ldnstream.vocab.LDP
-import rdftools.rdf.api.JenaTools._
+import rdftools.rdf.jena._
 import org.apache.jena.rdf.model.Resource
 import rdftools.rdf.Iri
 
