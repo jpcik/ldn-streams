@@ -26,7 +26,7 @@ trait StreamClient extends LdnEntity{
   implicit val timeout=Timeout(5 seconds)
   import StreamMsg._
 
-  def dataPushed(data:String):Unit
+  def dataPushed(data:String,count:Int):Unit
 
   def postStream(recv:ActorRef,streamName:String)
     (implicit targetUri:String,ct:ContentType.NonBinary)={
@@ -67,7 +67,7 @@ trait StreamClient extends LdnEntity{
   }
   def getStreamItemsPush(recv:ActorRef,uri:Uri)
    (implicit range:MediaRange)={
-    val actor=system.actorOf(Props(new StreamListener),"pipin")
+    val actor=system.actorOf(Props(new StreamListener))
     val req=PushStreamItems(uri,actor)
     recv ! req
   }
@@ -90,7 +90,8 @@ trait StreamClient extends LdnEntity{
   class StreamListener extends Actor {
     def receive= {
       case resp:ResponseMsg=>
-        dataPushed(resp.msg.body)
+        
+        dataPushed(resp.msg.body,resp.msg.count)
     }
   }
   

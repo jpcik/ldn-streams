@@ -15,17 +15,69 @@ import akka.stream.ActorMaterializer
 import ldnstream.streams.LdnStreamReceiver
 import rdftools.rdf.Graph
 import rdftools.rdf.jena._
+import ldnstream.streams.StreamReceiver
     
-object CqelsReceiver extends LdnStreamReceiver{
+trait CqelsReceiver extends StreamReceiver{
+  val id:Int
+  val cqelsCtx=new ExecContext(s"./tmp/cq_$id",true)
+  val cqels=new CQELSEngine(cqelsCtx)
+  val selects=new collection.mutable.HashMap[String,ContinuousSelect]
+
+  override def consumeGraph(uri:Uri,g:Graph)={
+    g.triples.foreach { t => cqelsCtx.engine send (uri.toString,t) }
+  }
+  
+  //"SELECT ?s ?p ?o WHERE {STREAM <e.com/stream> [RANGE 2s] {?s ?p ?o}}"
+  override def query(name:String,queryStr:String,
+      insert:Map[String,String]=>Unit)={
+    
+    val slct=cqelsCtx.registerSelect(queryStr)
+    slct.register(new ContinuousListener{
+      def update(map:Mapping)={
+        
+        val newMap=map.vars.asScala.map{v=>
+          v.getVarName->cqels.decode(map.get(v)).toString
+        }.toMap
+        insert(newMap)
+      }
+    })
+    selects.put(name,slct)
+  }
+ 
+  override def push(id:String,insert:Map[String,String]=>Unit)={
+    val con=new ContinuousListener{
+      def update(map:Mapping)={
+        //println("I am alive")
+        val newMap=map.vars.asScala.map{v=>
+          v.getVarName->cqels.decode(map.get(v)).toString
+        }.toMap
+        synchronized { 
+          insert(newMap)
+          }
+      }
+    }
+    selects(id).register(con)
+    ResultHandler(con)
+  }
+    
+  override def terminatePush(id:String,hnd:ResultHandler)={
+    selects(id).unregister(hnd.native.asInstanceOf[ContinuousListener])
+  }
+
+}
+
+object CqelsLdnReceiver extends LdnStreamReceiver with CqelsReceiver{
+  val id=1
   implicit val system = ActorSystem("LdnCqels")
   implicit val materializer= ActorMaterializer()
   val host="localhost"
   val port=8080 
- 
+ /*
   val cqelsCtx=new ExecContext("./",false)
   val cqels=new CQELSEngine(cqelsCtx)
   val selects=new collection.mutable.HashMap[String,ContinuousSelect]
 
+  //override def declareStream(uri:String)={}
   override def consumeGraph(uri:Uri,g:Graph)={
     g.triples.foreach { t => cqels send (uri.toString,t) }
   }
@@ -64,7 +116,7 @@ object CqelsReceiver extends LdnStreamReceiver{
   override def terminatePush(id:String,hnd:ResultHandler)={
     selects(id).unregister(hnd.native.asInstanceOf[ContinuousListener])
   }
-  
+  */
   def main(args:Array[String]):Unit={
     val bindingFuture = Http().bindAndHandle(receiverRoute, host, port)
     //testStream

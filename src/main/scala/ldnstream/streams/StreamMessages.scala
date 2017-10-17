@@ -6,11 +6,12 @@ trait StreamMsg {
   val uri:Uri
   val ct:ContentType.NonBinary
   val body:String
+  val count:Int
 }
 
 object StreamMsg {
   def Msg(b:String)=StreamMsgImpl(null,null,b)
-  def Msg(b:String,ct:ContentType.NonBinary)=StreamMsgImpl(null,ct,b)
+  def Msg(b:String,ct:ContentType.NonBinary,count:Int=0)=StreamMsgImpl(null,ct,b,count)
   def Msg(uri:Uri)=StreamMsgImpl(uri,null,null)
 }
 
@@ -24,7 +25,7 @@ trait ResponseMsg {//extends StreamMsg{
   val status:StatusCode
 }
 
-case class StreamMsgImpl(uri:Uri,ct:ContentType.NonBinary,body:String) extends StreamMsg
+case class StreamMsgImpl(uri:Uri,ct:ContentType.NonBinary,body:String,count:Int=0) extends StreamMsg
 
 import StreamMsg._
 import akka.http.scaladsl.model.Uri
@@ -44,6 +45,7 @@ object EmptyMsg extends StreamMsg{
   val uri=null
   val ct=null
   val body=null
+  val count=0
 }
 
 case class RetrieveAllStreams()(implicit val range:MediaRange) 

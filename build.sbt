@@ -4,6 +4,7 @@ version := "1.0.2"
 scalaVersion := "2.12.3"
   
 libraryDependencies ++= Seq(
+  "com.github.jsonld-java" % "jsonld-java" % "0.9.0",
   "ch.hevs" %% "rdf-tools" % "0.1.2",
   "ch.hevs" %% "rdf-tools-owlapi" % "0.1.2",
   "ch.hevs" %% "rdf-tools-jena" % "0.1.2",

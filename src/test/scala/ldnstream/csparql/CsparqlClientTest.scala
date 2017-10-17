@@ -23,7 +23,7 @@ object CsparqlClientTest {
       implicit val system=sys
       val materializer=ActorMaterializer() 
       
-      def dataPushed(data:String):Unit={
+      def dataPushed(data:String,c:Int):Unit={
         println("finally:   "+  data)
       }
     }
@@ -31,24 +31,24 @@ object CsparqlClientTest {
     implicit val serverIri="http://hevs.ch/streams"
     implicit val ct:ContentType.NonBinary=`application/ld+json`
     implicit val range=MediaRange.apply(`application/ld+json`)
-    val cqels=sys.actorOf(Props(new CsparqlReceiver(serverIri)), "cqels")
+    val csparql=sys.actorOf(Props(new CsparqlReceiver(serverIri,0)), "csparql")
     
-    client.postStream(cqels, "s1")
+    client.postStream(csparql, "s1")
         
     val ev="""{  "@context": "http://schema.org/",  "@type": "Event", "name": "Nice concert"} """
     sys.scheduler.schedule(0 seconds, 5 seconds){
-      client.postStreamItem(cqels, s"$serverIri/s1", ev, ct)
+      client.postStreamItem(csparql, s"$serverIri/s1", ev, ct)
     }
-        client.getStreams(cqels)
+        client.getStreams(csparql)
 
         
-    client.postQuery(cqels,"q1", s"REGISTER query q1 AS SELECT ?s ?p ?o FROM STREAM <$serverIri/s1> [RANGE 2s STEP 2s] WHERE {?s ?p ?o}",ct)
+    client.postQuery(csparql,"q1", s"REGISTER query q1 AS SELECT ?s ?p ?o FROM STREAM <$serverIri/s1> [RANGE 2s STEP 2s] WHERE {?s ?p ?o}",ct)
 
     
     Thread.sleep(10000)
     
     //client.getStreamItem(cqels, s"$serverIri/q1/output")
-    client.getStreamItemsPush(cqels, s"$serverIri/q1/push")
+    client.getStreamItemsPush(csparql, s"$serverIri/q1/push")
   }
   
   

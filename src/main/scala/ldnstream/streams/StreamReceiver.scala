@@ -45,6 +45,7 @@ trait StreamReceiver extends LdnEntity{
   def push(id:String,inser:Map[String,String]=>Unit):ResultHandler
   def terminatePush(id:String,hnd:ResultHandler):Unit
   
+  
   case class ResultHandler(native:Any)
   
   implicit val timeout=Timeout(5 seconds)
@@ -60,8 +61,8 @@ trait StreamReceiver extends LdnEntity{
     ErrorMsg(Msg(payload),StatusCodes.InternalServerError)
   }
   
-  protected def ok(payload:String,contentType:ContentType.NonBinary=`application/ld+json`)=
-    OkMsg(Msg(payload,contentType))
+  protected def ok(payload:String,contentType:ContentType.NonBinary=`application/ld+json`,count:Int=0)=
+    OkMsg(Msg(payload,contentType,count))
     
   private def asRdf(stream:RdfStream)={
     implicit val m=ModelFactory.createDefaultModel
@@ -135,7 +136,9 @@ trait StreamReceiver extends LdnEntity{
         val inputIri=s"$streamUri/input"
         val inputStr=RdfInputStream(streamUri,inputIri)
         (streamsHandler ? NewStream(inputStr)).map {
-          case Ok(msg) => ok(streamUri)
+          case Ok(msg) => 
+            //declareStream(streamUri)
+            ok(streamUri)
           case e:Error => error(e)
         }
     }
@@ -209,17 +212,17 @@ trait StreamReceiver extends LdnEntity{
     matching(ct) match {
       case None => mediaTypeNotSupported(ct)
       case Some(mt) => 
-        println("feed this rdf: "+pay)
+        //println("feed this rdf: "+pay)
         val m=loadRdf(pay)(toRdfLang(ct))
         consumeGraph(uri,m.getGraph)
         ok("done")
     }
            
-     
   def pushStreamItems(uri:Uri)={
     val streamUri=uri.toString.replace("/push","")
     val qu:Queue[collection.immutable.Map[String,String]]=new Queue[Map[String,String]]
-    val insert=(map:Map[String,String])=>qu.enqueue(map)
+    val insert=(map:Map[String,String])=>
+      qu.enqueue(map) 
     val handler=push(streamUri,insert)
     (handler,qu)          
       

@@ -13,7 +13,7 @@ import collection.JavaConverters._
 import eu.larkc.csparql.core.engine.CsparqlQueryResultProxy
 import java.util.Observer
 
-class CsparqlReceiver (iri:String) extends ActorStreamReceiver{
+class CsparqlReceiver (iri:String,name:Int) extends ActorStreamReceiver{
   //val cqelsCtx=new ExecContext("./",false)
   //val cqels=new CQELSEngine(cqelsCtx)
   val selects=new collection.mutable.HashMap[String,CsparqlQueryResultProxy]
@@ -27,11 +27,19 @@ class CsparqlReceiver (iri:String) extends ActorStreamReceiver{
   class TestStream(iri:String) extends RdfStream(iri){
     
   }
-  override def consumeGraph(uri:Uri,g:Graph)={
-    if (csparql.getStreamByIri(uri.toString)==null) {
+  //override def declareStream(uri:String)={
+    
+  
+  
+  private def registerStream(uri:Uri)={
+     if (csparql.getStreamByIri(uri.toString)==null) {
       val st=new TestStream(uri.toString)
       csparql.registerStream(st)
     }
+  }
+  
+  override def consumeGraph(uri:Uri,g:Graph)={
+    registerStream(uri)
       
     g.triples.foreach { t =>
       println("feed cqels "+uri)
@@ -43,6 +51,13 @@ class CsparqlReceiver (iri:String) extends ActorStreamReceiver{
   //"SELECT ?s ?p ?o WHERE {STREAM <e.com/stream> [RANGE 2s] {?s ?p ?o}}"
   override def query(name:String,queryStr:String,
       insert:Map[String,String]=>Unit)={
+    
+    val i=queryStr.indexOf("STREAM <")
+    val subs=queryStr.substring(i)
+    val j=subs.indexOf(">")
+    val streamIri=subs.substring(8,j)
+    registerStream(streamIri)
+    //println(streamIri)
     
     val slct=csparql.registerQuery(queryStr, false)
     slct.addObserver(setUpListener(insert))
@@ -58,11 +73,14 @@ class CsparqlReceiver (iri:String) extends ActorStreamReceiver{
   private def setUpListener(insert:Map[String,String]=>Unit)=
     new ResultFormatter{
       def update(obs:Observable,obj:Object)={
-        val rdf=obj.asInstanceOf[RDFTable].asScala
         
+        val rdf=obj.asInstanceOf[RDFTable].asScala
+        println("got updates ")
         rdf foreach {t=>
-          
-          insert(Seq("1"->t.get(1),"2"->t.get(2)).toMap)
+          //println("trolo")
+          val mapp=Seq("v1"->t.get(0),"v2"->t.get(1)).toMap
+          //println(s"dibi $mapp")
+          insert(mapp)
           
         }
       }
