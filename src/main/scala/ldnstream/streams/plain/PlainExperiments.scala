@@ -1,21 +1,17 @@
-package ldnstream.streams.cqels
+package ldnstream.streams.plain
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.ContentType
+import ldnstream.model.LdnTypes._
+import akka.http.scaladsl.model.MediaRange
+import scala.util.Random
 import ldnstream.streams.StreamClient
 import akka.stream.ActorMaterializer
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.MediaRange
 import akka.actor.Props
-import ldnstream.model.LdnTypes._
 import concurrent.duration._
-import language.postfixOps
-import com.github.jsonldjava.core.JsonLdApi
-import akka.http.scaladsl.model.ContentType.apply
-import akka.http.scaladsl.model.Uri.apply
-import scala.util.Random
 import java.io.FileWriter
 
-object CqelsExperiments {
+object PlainExperiments {
   
   val sys=ActorSystem("testSys")
   implicit val ctx=sys.dispatcher
@@ -24,11 +20,7 @@ object CqelsExperiments {
   implicit val serverIri="http://hevs.ch/streams"
 
   val query1=s"""
-    PREFIX qudt: <http://qudt.org/1.1/schema/qudt#> 
-    SELECT ?s ?o 
-    WHERE {STREAM <$serverIri/s1> [RANGE 20s] {
-      ?s qudt:numericValue ?o .
-    }       FILTER (?o > 0.8)
+    
 }"""
  
   def randouble=Random.nextDouble
@@ -67,17 +59,17 @@ object CqelsExperiments {
   }
 
   def createCqels(name:Int)={
-    sys.actorOf(Props(new CqelsActorReceiver(serverIri,name)), s"cqels$name")
+    sys.actorOf(Props(new PlainReceiver(serverIri,name)), s"cqels$name")
   }
   
   def runall={
     
     val queryNum=1
     val senderNum=10000
-    val consumerNum=2
-    val cqelsNum=2
+    val consumerNum=10
+    val cqelsNum=10
     val sendInterval=1000 milliseconds
-    val totalTime=20*1000
+    val totalTime=10*1000
     
     val leader=createClient
     
@@ -177,5 +169,6 @@ object CqelsExperiments {
     runall
 
   }
+
 
 }

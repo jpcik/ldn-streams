@@ -45,9 +45,15 @@ trait ActorStreamReceiver extends Actor with StreamReceiver{
       val (handler,qu)=pushStreamItems(p.uri)
       context.system.scheduler.schedule(0 seconds,1000 milliseconds){
         val numb=qu.size
+        
         println("pushing "+numb)
-        qu.dequeueAll(a=>true)
-        p.actor ! ok(stringize(qu.dequeueAll(a=>true)),count=numb)
+        
+        //qu.clear()
+        //.dequeueAll(a=>true)
+        val dob=stringize(qu.dequeueAll(a=>true))
+        
+        p.actor ! ok(dob,count=numb)
+        
       }
       
   }
