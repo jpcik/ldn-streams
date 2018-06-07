@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import org.apache.jena.rdf.model.Property
-import ldnstream.vocab.LDP
+import rspactors.vocab.LDP
 import rdftools.rdf.jena._
 import ldnstream.Receiver
 import rdftools.rdf.Iri

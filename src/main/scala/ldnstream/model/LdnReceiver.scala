@@ -7,13 +7,13 @@ import akka.http.scaladsl.server.Directives._
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.ResourceFactory
 import org.apache.jena.riot.RDFDataMgr
-import ldnstream.core.NotificationHandler
-import ldnstream.core.JsonLdPayload
-import ldnstream.core.TurtlePayload
+import rspactors.core.NotificationHandler
+import rspactors.core.JsonLdPayload
+import rspactors.core.TurtlePayload
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
 import org.apache.jena.vocabulary.RDF
-import ldnstream.vocab.LDP
+import rspactors.vocab.LDP
 import rdftools.rdf.RdfTools
 import rdftools.rdf.jena._
 

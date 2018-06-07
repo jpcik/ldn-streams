@@ -1,4 +1,4 @@
-# LDN-Streams 
+# LDN-Streams and RSP actors
 
 This project is an implementation of Linked Data Notifications for RDF streams.
 
@@ -20,3 +20,4 @@ The requirements for running the ldn-streams are:
 
 An Http server will run on localhost:8080.
 
+For RSP actors examples, check the test classes under src/test for a couple of running examples for CQELS and C-SPARQL implementations.

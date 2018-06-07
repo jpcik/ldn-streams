@@ -9,7 +9,7 @@ import org.apache.jena.rdf.model.ResourceFactory
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.riot.Lang
 import java.io.StringWriter
-import ldnstream.vocab.LDP
+import rspactors.vocab.LDP
 import rdftools.rdf.jena._
 
 trait LdnTarget extends LdnNode {

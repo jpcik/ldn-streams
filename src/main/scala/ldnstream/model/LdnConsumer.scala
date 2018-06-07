@@ -13,7 +13,7 @@ import collection.JavaConverters._
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.RDFNode
 import java.io.StringWriter
-import ldnstream.vocab.LDP
+import rspactors.vocab.LDP
 import rdftools.rdf.jena._
 import org.apache.jena.rdf.model.Resource
 import rdftools.rdf.Iri
