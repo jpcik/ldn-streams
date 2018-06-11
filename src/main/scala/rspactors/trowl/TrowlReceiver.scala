@@ -6,7 +6,6 @@ import rspactors.ActorStreamReceiver
 import eu.trowl.owlapi3.rel.tms.reasoner.dl.RELReasonerFactory
 import org.semanticweb.owlapi.model.OWLOntologyFactory
 import org.semanticweb.owlapi.model.OWLOntologyManager
-import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.IRI
 import collection.JavaConverters._
 import language.implicitConversions
@@ -25,6 +24,8 @@ import org.semanticweb.owlapi.model.OWLAxiom
 import concurrent.duration._
 import collection.JavaConverters._
 import rdftools.rdf.vocab.RDF
+import org.semanticweb.owlapi.apibinding.OWLManager
+import rdftools.owl.owlapi.OwlApiTools
 
 
 class TrowlReceiver(iri:String,id:Int) extends ActorStreamReceiver{
@@ -51,7 +52,8 @@ class TrowlReceiver(iri:String,id:Int) extends ActorStreamReceiver{
       Declaration(objectProperty("someProp")) ::
       SubClassOf(
           ObjectIntersectionOf(c"sosa:Observation", 
-              ObjectSomeValuesFrom(op"sosa:observedProperty",c"qudt:TemperatureQuantity")),c"ex:TemperatureObservation") ::
+              ObjectSomeValuesFrom(op"sosa:observedProperty",c"qudt:TemperatureQuantity")),
+          c"ex:TemperatureObservation") ::
       ClassAssertion(c"qudt:TemperatureQuantity", ind"ex:Temperature") ::
       ClassAssertion(c"sosa:Observation",ind"ex:obs1") ::
       EquivalentClasses(clazz("Toto"),clazz("Mimi")) :: Nil )
@@ -61,20 +63,28 @@ class TrowlReceiver(iri:String,id:Int) extends ActorStreamReceiver{
   val relfactory = new RELReasonerFactory();
   val reasoner = relfactory.createReasoner(onto);
 
+val olo= OWLManager.createOWLOntologyManager()
+//olo.loadOntologyFromOntologyDocument(is)
+
+
   val serverIri=Uri(iri)
-    
+  
+  def updateOntology()={
+  
+  }
+  
   //override def declareStream(uri:String)={}
   override def consumeGraph(uri:Uri,g:Graph)={
   
     g.triples.foreach { t =>
       println("feed cqels "+uri)
       
-     
-      
+           
       val subjectInd=t.subject match {
         case iri:Iri=>individual(iri)
         case bn:Bnode=>f.getOWLAnonymousIndividual(bn.id) 
       }
+      
       val toAdd:OWLAxiom=
       if (t.predicate == RDF.`type`.iri){
         println("classy: "+t.o)
@@ -83,9 +93,12 @@ class TrowlReceiver(iri:String,id:Int) extends ActorStreamReceiver{
         
       else
       t.o match {
-        case lo:Literal=>DataPropertyAssertion(dataProperty(t.p), subjectInd, lo)
-        case lo:Iri=>ObjectPropertyAssertion(objectProperty(t.p), subjectInd, individual(lo))
-        case bn:Bnode=>ObjectPropertyAssertion(objectProperty(t.p),subjectInd, f.getOWLAnonymousIndividual(bn.id))
+        case lo:Literal=>
+          DataPropertyAssertion(dataProperty(t.p), subjectInd, lo)
+        case lo:Iri=>
+          ObjectPropertyAssertion(objectProperty(t.p), subjectInd, individual(lo))
+        case bn:Bnode=>
+          ObjectPropertyAssertion(objectProperty(t.p),subjectInd, f.getOWLAnonymousIndividual(bn.id))
       }
       reasoner.add(Set(toAdd).asJava)
       reasoner.reclassify
@@ -98,9 +111,15 @@ class TrowlReceiver(iri:String,id:Int) extends ActorStreamReceiver{
     //val parser = new ManchesterOWLSyntaxClassExpressionParser(f,null)
     //val exp=parser.parse("ex:TemperatureObservation")
     
+    println("papapa "+queryStr)
+    
     context.system.scheduler.schedule(0 seconds, 2 seconds){
-      //reasoner.reclassify
-      val inds=reasoner.getInstances(c"ex:TemperatureObservation",true)
+      reasoner.reclassify
+      
+      val cls=OwlApiTools.Class(queryStr)
+      //val inds=reasoner.getInstances(c"ex:TemperatureObservation",true)
+      println(s"queryp: ${cls.getIRI}")
+      val inds=reasoner.getInstances(cls,true)
       println("only got "+inds.asScala.size)
       
       inds.getFlattened.asScala.map{ind=>

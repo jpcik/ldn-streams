@@ -1,7 +1,6 @@
 package rspactors
 
 import akka.http.scaladsl.model._
-import rspactors.EmptyMsg;
 
 trait StreamMsg {
   val uri:Uri

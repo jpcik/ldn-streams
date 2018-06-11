@@ -1,30 +1,22 @@
 package ldnstream.model
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.MediaType.WithFixedCharset
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.HttpMethods._
-
-import collection.JavaConverters._
-import org.apache.jena.riot.Lang
-import akka.http.scaladsl.Http
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import concurrent.duration._
 import java.io.StringReader
-import org.apache.jena.riot.RDFDataMgr
-import org.apache.jena.rdf.model.ResourceFactory
-import org.apache.jena.rdf.model.ModelFactory
-import scala.concurrent.ExecutionContext
+
+import scala.collection.JavaConverters._
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
-import org.apache.jena.rdf.model.Property
-import rspactors.vocab.LDP
-import rdftools.rdf.jena._
+
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.riot.RDFDataMgr
+
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model.headers._
 import ldnstream.Receiver
-import rdftools.rdf.Iri
+import rdftools.rdf.jena._
+import rspactors.vocab.LDP
 
 trait LdnNode extends LdnEntity{
 

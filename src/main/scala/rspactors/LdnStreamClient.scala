@@ -31,9 +31,11 @@ class LdnStreamClient(name:String)
   
   import HttpMethods._
   import LdnTypes._
+  
   def createReadStream(streamName:String)
     (implicit server:StreamTarget,
      contentType:MediaType.WithFixedCharset):Unit={
+    
     implicit val lang=toRdfLang(contentType)
     val pay=createStreamPayload(server, streamName)
     val ent=HttpEntity(ContentType( contentType),pay)
@@ -43,6 +45,7 @@ class LdnStreamClient(name:String)
     val popo=Await.result(resp,5 seconds)
     println(popo.status)
   }
+  
   def getStreams()
     (implicit server:StreamTarget , contentType:MediaType):Unit={
     implicit val lang=toRdfLang(contentType)

@@ -1,25 +1,14 @@
 package rspactors.core
 
-import org.apache.jena.rdf.model.ModelFactory
 import akka.http.scaladsl.model.Uri
 import rspactors.RdfStream
 import akka.actor._
 import collection.mutable.{Map=>MutableMap}
-import org.apache.jena.rdf.model.ResourceFactory
-import java.io.StringWriter
-import org.apache.jena.riot.Lang
-import org.apache.jena.riot.RDFDataMgr
 import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 import concurrent.duration._
 import scala.language.postfixOps
-import rspactors.vocab.LDP
-import rdftools.rdf.jena._
-import rdftools.rdf._
-import rdftools.rdf.RdfSchema._
-import rspactors.vocab.RSPS
 import scala.language.implicitConversions
-import akka.http.scaladsl.model.ContentType
 import ldnstream.model.LdnTypes
 
 class StreamsHandler(targetUri:Uri) extends Actor{

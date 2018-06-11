@@ -5,7 +5,6 @@ import akka.http.scaladsl.model._
 import ldnstream.model.LdnTypes._
 import scala.util.Random
 import rspactors.StreamClient
-import rspactors.trowl.TrowlReceiver;
 import akka.stream.ActorMaterializer
 import akka.actor.Props
 import java.io.FileWriter
@@ -20,12 +19,7 @@ object TrowlExperiments {
   implicit val range=MediaRange.apply(`application/ld+json`)
   implicit val serverIri="http://hevs.ch/streams"
 
-  val query1=s"""
-    PREFIX qudt: <http://qudt.org/1.1/schema/qudt#> 
-    SELECT ?s ?o 
-    WHERE {STREAM <$serverIri/s1> [RANGE 20s] {
-      ?s qudt:numericValue ?o
-    }}"""
+  val query1=s"""ex:TemperatureObservation"""
  
   def randouble=Random.nextDouble
   def randint(range:Int=100)=Random.nextInt(range)

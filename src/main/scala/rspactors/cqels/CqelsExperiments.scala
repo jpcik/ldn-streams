@@ -9,6 +9,7 @@ import akka.actor.Props
 import ldnstream.model.LdnTypes._
 import concurrent.duration._
 import language.postfixOps
+import language.reflectiveCalls
 import com.github.jsonldjava.core.JsonLdApi
 import akka.http.scaladsl.model.ContentType.apply
 import akka.http.scaladsl.model.Uri.apply
@@ -27,9 +28,9 @@ object CqelsExperiments {
     PREFIX qudt: <http://qudt.org/1.1/schema/qudt#> 
     SELECT ?s ?o 
     WHERE {STREAM <$serverIri/s1> [RANGE 20s] {
-      ?s qudt:numericValue ?o .
-    }       FILTER (?o > 0.8)
-}"""
+        ?s qudt:numericValue ?o .
+      }       FILTER (?o > 0.8)
+    }"""
  
   def randouble=Random.nextDouble
   val contextJson=""" 
@@ -86,7 +87,6 @@ object CqelsExperiments {
     }
     
     Thread.sleep(3000)
-
     
     processors foreach{cqels=>
       leader.postStream(cqels, "s1")
@@ -134,18 +134,12 @@ object CqelsExperiments {
       i+=1
     }
         
-    //leader.getStreams(cqels)
-
-    
-    //Thread.sleep(10000)
-    
+    //leader.getStreams(cqels)  
+    //Thread.sleep(10000)    
     //client.getStreamItem(cqels, s"$serverIri/q1/output")
   
-    
-
     Thread.sleep(totalTime)
         println("""
-          ###################
           ###################
           ###################
           ###################
@@ -164,11 +158,9 @@ object CqelsExperiments {
     consumers foreach {consumer=>
       fw.write("\n########got: "+consumer.count)
     }
-    fw.write("\n avg: "+consumers.map(c=>c.count).sum) 
-            
+    fw.write("\n avg: "+consumers.map(c=>c.count).sum)             
    
     fw.close
-
     
   }
   

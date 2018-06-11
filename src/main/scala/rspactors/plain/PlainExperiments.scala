@@ -126,11 +126,8 @@ object PlainExperiments {
       i+=1
     }
         
-    //leader.getStreams(cqels)
-
-    
-    //Thread.sleep(10000)
-    
+    //leader.getStreams(cqels)    
+    //Thread.sleep(10000)    
     //client.getStreamItem(cqels, s"$serverIri/q1/output")
   
     

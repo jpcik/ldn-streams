@@ -28,9 +28,6 @@ import rdftools.rdf.jena._
 import rdftools.rdf.vocab.RDFS
 import spray.json._
 import org.apache.jena.rdf.model.Model
-import rspactors.RdfStream
-import rspactors.RdfOutputStream
-import rspactors.RdfInputStream
 
 trait StreamReceiver extends LdnEntity{
   import StatusCodes._

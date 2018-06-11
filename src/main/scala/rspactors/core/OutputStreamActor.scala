@@ -2,13 +2,7 @@ package rspactors.core
 
 import akka.actor._
 import scala.collection.mutable.Queue
-import rspactors.RdfStream
 import rdftools.rdf.Triple
-import org.apache.jena.riot.RDFDataMgr
-import java.io.StringWriter
-import rdftools.rdf.jena._
-import collection.JavaConversions._
-import java.io.ObjectOutputStream
 
 class OutputStreamActor(maxSize:Int) extends Actor {
   
@@ -17,29 +11,30 @@ class OutputStreamActor(maxSize:Int) extends Actor {
  
  def receive = {
    case Push(data) => 
-     println("got this "+data)
-     
+     println("got this "+data)     
      queue+=(data)
      if (queue.size>maxSize)
        queue.dequeue
+   
    case PushMapping(data)=>  
-      mappingQueue+=(data)
+     mappingQueue+=(data)
      if (mappingQueue.size>maxSize)
        mappingQueue.dequeue
+   
    case Last(n) => 
-      println("asking last")
+     println("asking last")
       
-      val ddd=(mappingQueue.takeRight(n)).toIterator
-      .mkString(",")
-      println("tobias "+ddd)
-       sender ! ddd
+     val ddd=(mappingQueue.takeRight(n)).toIterator.mkString(",")
+     println("tobias "+ddd)
+     sender ! ddd
        
    case t:Triple=>
      println(t)
-    case s:Seq[Seq[Triple]]=>
-      println("dribilin "+s.size)
-      println(s.map{ss=>ss.mkString(",")}.mkString("\n"))
-    }
+   
+   case s:Seq[Seq[Triple]]=>
+     println("dribilin "+s.size)
+     println(s.map{ss=>ss.mkString(",")}.mkString("\n"))
+  }
    
 }
 
