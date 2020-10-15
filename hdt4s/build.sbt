@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
 )
 
 resolvers ++= Seq(
-  "typesafe" at "http://repo.typesafe.com/typesafe/releases/",
+  "typesafe" at "https://dl.bintray.com/typesafe/maven-releases/",
   "jitpack" at "https://jitpack.io",
   Resolver.sonatypeRepo("public")
 )

@@ -1,23 +1,12 @@
 package ldnstream.model
 
-import java.io.StringReader
-
-import scala.collection.JavaConversions._
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.rdf.model.ResourceFactory
-import org.apache.jena.riot.Lang
-import org.apache.jena.riot.RDFDataMgr
-
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model.headers._
-import akka.stream.ActorMaterializer
 import ldnstream.Receiver
 
 trait LdnSender extends LdnNode {

@@ -12,10 +12,8 @@ import org.apache.jena.riot.RDFDataMgr
 import collection.JavaConverters._
 import org.apache.jena.rdf.model.Property
 import org.apache.jena.rdf.model.RDFNode
-import java.io.StringWriter
 import rspactors.vocab.LDP
 import rdftools.rdf.jena._
-import org.apache.jena.rdf.model.Resource
 import rdftools.rdf.Iri
 
 trait LdnConsumer extends LdnNode{
