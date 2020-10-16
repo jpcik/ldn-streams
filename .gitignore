@@ -24,4 +24,6 @@ datasets/
 .classpath
 .project
 .settings/
-tmp/cq_0/*
+
+.idea/
+
