@@ -24,3 +24,6 @@ datasets/
 .classpath
 .project
 .settings/
+
+.idea/
+
